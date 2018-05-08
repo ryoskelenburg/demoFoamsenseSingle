@@ -76,10 +76,6 @@ private:
     void digitalPinChanged(const int & pinNum);
     void analogPinChanged(const int & pinNum);
     void updateArduino();
-    void sendDigitalArduino01();
-    void sendDigitalArduino02();
-    void sendDigitalArduino03();
-    void sendDigitalArduino04();
     
     string buttonState;
     string potValue;
