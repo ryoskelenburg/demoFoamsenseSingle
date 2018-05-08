@@ -23,7 +23,7 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
     
-    ofTrueTypeFont        font;
+    ofTrueTypeFont      font;
     ofTrueTypeFont      smallFont;
     
     float width = ofGetWidth()/2;

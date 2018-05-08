@@ -22,18 +22,15 @@ void ofApp::setup(){
 
 void ofApp::update(){
     currentFrameRate = ofGetFrameRate();
+    neutral = (float)ceil2((double)neutral,1);
     
     updateArduino();
     rawInputValue = ard.getAnalog(0);
     rawOutputValue = ard.getAnalog(1);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
-    
     plot->update(filterInputValue[1]);
-    
-    //ofxguiのfloatをintへ
-    neutral = (float)ceil2((double)neutral,1);
-
+    plot2->update(filterOutputValue[1]);
 }
 
 
@@ -58,10 +55,9 @@ void ofApp::draw(){
     
     plot->draw(0, 300, ofGetWidth(), 300);
     plot2->draw(0, 300, ofGetWidth(), 300);
-    filterInputValue[0] = filterInputValue[1];//値の更新
+    filterInputValue[0] = filterInputValue[1];
+    filterOutputValue[0] = filterOutputValue[1];
 }
-
-//--------------------------------------------------------------
 
 double ofApp::ceil2(double dIn, int nLen){
     double dOut;
@@ -69,14 +65,6 @@ double ofApp::ceil2(double dIn, int nLen){
     dOut = (double)(int)(dOut + 0.9);
     return dOut * pow(10.0, -nLen);
 }
-
-void ofApp::defineSponge(int _analogV,int _define){
-    if (_define < _analogV + 1) {
-        _define = _analogV;
-    }
-}
-
-//--------------------------------------------------------------
 
 void ofApp::initArduino(){
     buttonState = "digital pin:";
@@ -176,7 +164,7 @@ void ofApp::setupHistoryPlot(){
     plot->setShowSmoothedCurve(false);
     plot->setSmoothFilter(0.1); //smooth filter strength
     
-    plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), true);
+    plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), false);
     plot2->setBackgroundColor(ofColor(0,0,0,0));
     plot2->setColor( ofColor(255,0,255) );
     plot2->setRange(0, 1023);//definable range of plot
