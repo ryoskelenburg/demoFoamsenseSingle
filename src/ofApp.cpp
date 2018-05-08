@@ -57,6 +57,7 @@ void ofApp::draw(){
     gui.draw();
     
     plot->draw(0, 300, ofGetWidth(), 300);
+    plot2->draw(0, 300, ofGetWidth(), 300);
     filterInputValue[0] = filterInputValue[1];//値の更新
 }
 
@@ -163,9 +164,8 @@ void ofApp::analogPinChanged(const int & pinNum) {
 
 void ofApp::setupHistoryPlot(){
     plot = new ofxHistoryPlot(&currentFrameRate, "timeline", ofGetWidth(), false);
-    plot->setBackgroundColor(ofColor(16));
+    plot->setBackgroundColor(ofColor(0,0,0,0));
     //plot->setShowNumericalInfo(true);
-    
     plot->setRange(0, 1023);//definable range of plot
     plot->setRespectBorders(true);
     plot->setLineWidth(1);
@@ -175,6 +175,18 @@ void ofApp::setupHistoryPlot(){
     plot->setGridColor(ofColor(100));
     plot->setShowSmoothedCurve(false);
     plot->setSmoothFilter(0.1); //smooth filter strength
+    
+    plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), true);
+    plot2->setBackgroundColor(ofColor(0,0,0,0));
+    plot2->setColor( ofColor(255,0,255) );
+    plot2->setRange(0, 1023);//definable range of plot
+    plot2->setRespectBorders(true);
+    plot2->setLineWidth(1);
+    plot2->setCropToRect(true);
+    plot2->setDrawGrid(true);
+    plot2->setGridUnit(16);
+    plot2->setShowSmoothedCurve(false);
+    plot2->setSmoothFilter(0.1); //smooth filter strength
 }
 
 void ofApp::keyPressed(int key){
@@ -182,9 +194,6 @@ void ofApp::keyPressed(int key){
         case 'f':
             ofToggleFullscreen();
             break;
-//        case'c':
-//            maxValue = 0;
-//            break;
 //        case 'o':
 //            ard.sendDigital(3, ARD_HIGH);
 //            break;
