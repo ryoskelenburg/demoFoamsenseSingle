@@ -6,7 +6,7 @@ void ofApp::setup(){
     ofBackground(20, 20, 20);
     
     ofSetVerticalSync(true);
-    ofSetFrameRate(20);
+    ofSetFrameRate(60);
     font.load("franklinGothic.otf", 20);
     smallFont.load("franklinGothic.otf", 14);
     
@@ -26,11 +26,14 @@ void ofApp::update(){
     
     updateArduino();
     rawInputValue = ard.getAnalog(0);
+    mapInputValue = ofMap(rawInputValue, 0, 1023, 100, 500);
     rawOutputValue = ard.getAnalog(1);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
     plot->update(filterInputValue[1]);
     plot2->update(filterOutputValue[1]);
+    
+    
 }
 
 
@@ -38,18 +41,16 @@ void ofApp::draw(){
     
     ofSetColor(255);
     if (!bSetupArduino){
-        font.drawString("arduino not ready...\n", 600, 40);
+        font.drawString("arduino not ready...\n", 20, 200);
     } else {
-        font.drawString(potValue, 600,40);
-        
-        std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
+        font.drawString("connect succeed!\n", 20,200);
     }
     
-    font.drawString("rawInputValue          :=  " + ofToString(rawInputValue), 600, 60);
-    font.drawString("filterInputValue[0]          :=  " + ofToString(filterInputValue[0]), 600, 80);
-    font.drawString("filterInputValue[1]          :=  " + ofToString(filterInputValue[1]), 600, 100);
-    
-    
+    font.drawString("rawInputValue  :  " + ofToString(rawInputValue), 600, 60);
+    font.drawString("InputValue     :  " + ofToString(filterInputValue[1]), 600, 60 + 30);
+    font.drawString("rawOutputValue :  " + ofToString(rawOutputValue), 600, 60 + 60);
+    font.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), 600, 60 + 90);
+    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
     
     gui.draw();
     

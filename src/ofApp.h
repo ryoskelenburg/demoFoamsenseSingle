@@ -31,6 +31,7 @@ class ofApp : public ofBaseApp{
     
     int rawInputValue = 0;
     int rawOutputValue = 0;
+    int mapInputValue = 0;
     int filterInputValue[2] = {0};
     int filterOutputValue[2] = {0};
     float a = 0.9;
