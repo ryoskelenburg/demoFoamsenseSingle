@@ -6,7 +6,7 @@ void ofApp::setup(){
     ofBackground(20, 20, 20);
     
     ofSetVerticalSync(true);
-    ofSetFrameRate(20);
+    ofSetFrameRate(60);
     font.load("franklinGothic.otf", 20);
     smallFont.load("franklinGothic.otf", 14);
     
@@ -22,155 +22,43 @@ void ofApp::setup(){
 
 void ofApp::update(){
     currentFrameRate = ofGetFrameRate();
+    neutral = (float)ceil2((double)neutral,1);
     
     updateArduino();
     rawInputValue = ard.getAnalog(0);
+    mapInputValue = ofMap(rawInputValue, 0, 1023, 100, 500);
     rawOutputValue = ard.getAnalog(1);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
-    
     plot->update(filterInputValue[1]);
+    plot2->update(filterOutputValue[1]);
     
-    //ofxguiのfloatをintへ
-    neutral = (float)ceil2((double)neutral,1);
     
-    delta = filterInputValue[1] - filterInputValue[0];//値の変化量
-    absDelta = abs(filterInputValue[1] - filterInputValue[0]);//値の変化量[絶対値]
-    identNeutral = abs(filterInputValue[1] - neutral);//ニュートラルの判別値
-    
-    if (absDelta > defineDelta) { // 変化量がある
-        if (delta > 0) { //電圧が上がる=抵抗値が減少している
-            if (filterInputValue[1] > neutral) { //圧縮
-                //②
-                condition = 2;
-                ard.sendDigital(13, ARD_HIGH);
-                sendDigitalArduino02();
-            } else { //膨張終わり
-                //①
-                condition = 10;
-                ard.sendDigital(13, ARD_LOW);
-                sendDigitalArduino01();
-            }
-        } else { // 電圧が下がる=抵抗値が上がる
-            if (filterInputValue[1] < neutral) { //膨張
-                //③
-                condition = 3;
-                ard.sendDigital(13, ARD_HIGH);
-                sendDigitalArduino03();
-            } else { //圧縮終わり
-                //①
-                condition = 10;
-                ard.sendDigital(13, ARD_LOW);
-                sendDigitalArduino01();
-            }
-        }
-    } else { // 変化量がない
-        if (identNeutral > defineNeutral) { // ニュートラルでない
-            //④
-            condition = 4;
-            ard.sendDigital(13, ARD_LOW);
-            sendDigitalArduino04();
-        } else { // ニュートラル
-            //①
-            condition = 1;
-            ard.sendDigital(13, ARD_LOW);
-            sendDigitalArduino01();
-        }
-    }
-    
-    //    //触れた時の値を最小値に格納する
-    //    defineSponge(filterInputValue, minValue);
-    //    //valuefilterInputValue = filterInputValue;
-    //    pressByte = ofMap(filterInputValue,minValue, maxValue, 0, 100);
-    //    pressSponge = ofMap(pressByte,0,100,0,30);
-    //    //    //????
-    //    //    if ( pressByte < pressSponge) {
-    //    //        pressByte = pressSponge;
-    //    //    }
-    //    //最大値をアップデート
-    //    if(filterInputValue > maxValue){
-    //        maxValue = filterInputValue;
-    //    }
 }
 
-void ofApp::sendDigitalArduino01(){
-    ard.sendDigital(3, ARD_HIGH);
-    ard.sendDigital(4, ARD_HIGH);
-    ard.sendDigital(5, ARD_HIGH);
-    ard.sendDigital(6, ARD_HIGH);
-}
-
-void ofApp::sendDigitalArduino02(){
-    ard.sendDigital(3, ARD_LOW);
-    ard.sendDigital(4, ARD_HIGH);
-    ard.sendDigital(5, ARD_HIGH);
-    ard.sendDigital(6, ARD_LOW);
-}
-
-void ofApp::sendDigitalArduino03(){
-    ard.sendDigital(3, ARD_HIGH);
-    ard.sendDigital(4, ARD_LOW);
-    ard.sendDigital(5, ARD_LOW);
-    ard.sendDigital(6, ARD_HIGH);
-}
-
-void ofApp::sendDigitalArduino04(){
-    ard.sendDigital(3, ARD_LOW);
-    ard.sendDigital(4, ARD_LOW);
-    ard.sendDigital(5, ARD_HIGH);
-    ard.sendDigital(6, ARD_HIGH);
-}
 
 void ofApp::draw(){
     
     ofSetColor(255);
     if (!bSetupArduino){
-        font.drawString("arduino not ready...\n", 600, 40);
+        font.drawString("arduino not ready...\n", 20, 200);
     } else {
-        font.drawString(potValue, 600,40);
-        
-        std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
+        font.drawString("connect succeed!\n", 20,200);
     }
     
-    font.drawString("rawInputValue          :=  " + ofToString(rawInputValue), 600, 60);
-    font.drawString("filterInputValue[0]          :=  " + ofToString(filterInputValue[0]), 600, 80);
-    font.drawString("filterInputValue[1]          :=  " + ofToString(filterInputValue[1]), 600, 100);
-    
-    
-    //idendfify condition
-    switch (condition) {
-        case 1:
-            ofSetColor(255);
-            font.drawString("MODE.1:Neutral\nA:OPEN\nB:OPEN\nC:OPEN\nD:OPEN ", 300, 40);
-            break;
-        case 2:
-            ofSetColor(0,255,0);
-            font.drawString("MODE.2:Compress\nA:CLOSE\nB:OPEN\nC:OPEN\nD:CLOSE", 300, 40);
-            break;
-        case 3:
-            ofSetColor(255,0,0);
-            font.drawString("MODE.3:Stretch\nA:CLOSE\nB:CLOSE\nC:OPEN\nD:OPEN", 300, 40);
-            break;
-        case 4:
-            ofSetColor(255);
-            font.drawString("MODE.4:Continue\nA:OPEN\nB:CLOSE\nC:CLOSE\nD:OPEN", 300, 40);
-            break;
-        case 10:
-            ofSetColor(0,255,0);
-            font.drawString("MODE.10:Restoration\nA:OPEN\nB:OPEN\nC:OPEN\nD:OPEN", 300, 40);
-            break;
-        default:
-            break;
-    }
+    font.drawString("rawInputValue  :  " + ofToString(rawInputValue), 600, 60);
+    font.drawString("InputValue     :  " + ofToString(filterInputValue[1]), 600, 60 + 30);
+    font.drawString("rawOutputValue :  " + ofToString(rawOutputValue), 600, 60 + 60);
+    font.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), 600, 60 + 90);
+    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
     
     gui.draw();
-    //drawPressSponge(pressByte);
     
     plot->draw(0, 300, ofGetWidth(), 300);
-    filterInputValue[0] = filterInputValue[1];//値の更新
+    plot2->draw(0, 300, ofGetWidth(), 300);
+    filterInputValue[0] = filterInputValue[1];
+    filterOutputValue[0] = filterOutputValue[1];
 }
-
-//--------------------------------------------------------------
 
 double ofApp::ceil2(double dIn, int nLen){
     double dOut;
@@ -178,14 +66,6 @@ double ofApp::ceil2(double dIn, int nLen){
     dOut = (double)(int)(dOut + 0.9);
     return dOut * pow(10.0, -nLen);
 }
-
-void ofApp::defineSponge(int _analogV,int _define){
-    if (_define < _analogV + 1) {
-        _define = _analogV;
-    }
-}
-
-//--------------------------------------------------------------
 
 void ofApp::initArduino(){
     buttonState = "digital pin:";
@@ -273,9 +153,8 @@ void ofApp::analogPinChanged(const int & pinNum) {
 
 void ofApp::setupHistoryPlot(){
     plot = new ofxHistoryPlot(&currentFrameRate, "timeline", ofGetWidth(), false);
-    plot->setBackgroundColor(ofColor(16));
+    plot->setBackgroundColor(ofColor(0,0,0,0));
     //plot->setShowNumericalInfo(true);
-    
     plot->setRange(0, 1023);//definable range of plot
     plot->setRespectBorders(true);
     plot->setLineWidth(1);
@@ -285,6 +164,18 @@ void ofApp::setupHistoryPlot(){
     plot->setGridColor(ofColor(100));
     plot->setShowSmoothedCurve(false);
     plot->setSmoothFilter(0.1); //smooth filter strength
+    
+    plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), false);
+    plot2->setBackgroundColor(ofColor(0,0,0,0));
+    plot2->setColor( ofColor(255,0,255) );
+    plot2->setRange(0, 1023);//definable range of plot
+    plot2->setRespectBorders(true);
+    plot2->setLineWidth(1);
+    plot2->setCropToRect(true);
+    plot2->setDrawGrid(true);
+    plot2->setGridUnit(16);
+    plot2->setShowSmoothedCurve(false);
+    plot2->setSmoothFilter(0.1); //smooth filter strength
 }
 
 void ofApp::keyPressed(int key){
@@ -292,9 +183,6 @@ void ofApp::keyPressed(int key){
         case 'f':
             ofToggleFullscreen();
             break;
-//        case'c':
-//            maxValue = 0;
-//            break;
 //        case 'o':
 //            ard.sendDigital(3, ARD_HIGH);
 //            break;
@@ -355,11 +243,3 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
     
 }
 
-//void ofApp::drawPressSponge(int _value){
-//    ofBeginShape();
-//    ofVertex(width+100, height+100);//右下
-//    ofVertex(width+100,height-100+_value);//右上
-//    ofVertex(width-100,height-100+_value);//左上
-//    ofVertex(width-100,height+100);//左下
-//    ofEndShape(true);
-//}

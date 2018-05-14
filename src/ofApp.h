@@ -23,23 +23,21 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
     
+    ofTrueTypeFont      font;
+    ofTrueTypeFont      smallFont;
+    
     float width = ofGetWidth()/2;
     float height = ofGetHeight()/2;
     
-    ofTrueTypeFont        font;
-    ofTrueTypeFont      smallFont;
-		
     int rawInputValue = 0;
     int rawOutputValue = 0;
+    int mapInputValue = 0;
     int filterInputValue[2] = {0};
     int filterOutputValue[2] = {0};
     float a = 0.9;
     
     float currentFrameRate;
-    
-//    int pressByte = 0;
-//    int pressSponge = 0;
-//    int maxValue = 0;
+    double ceil2(double dIn, int nLen);
     
     void drawPressSponge(int _value);
     void defineSponge(int _analog, int _define);
@@ -53,9 +51,8 @@ class ofApp : public ofBaseApp{
     ofxFloatSlider defineDelta;
     
     ofxHistoryPlot * plot;
+    ofxHistoryPlot * plot2;
     void setupHistoryPlot();
-    
-    double ceil2(double dIn, int nLen);
     
     //control---------------------------------
     int delta;
@@ -76,10 +73,6 @@ private:
     void digitalPinChanged(const int & pinNum);
     void analogPinChanged(const int & pinNum);
     void updateArduino();
-    void sendDigitalArduino01();
-    void sendDigitalArduino02();
-    void sendDigitalArduino03();
-    void sendDigitalArduino04();
     
     string buttonState;
     string potValue;
