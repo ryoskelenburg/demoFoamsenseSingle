@@ -1,19 +1,16 @@
 #include "ofApp.h"
-
-//--------------------------------------------------------------
-
 void ofApp::setup(){
     ofBackground(20, 20, 20);
     
     ofSetVerticalSync(true);
     ofSetFrameRate(60);
-    font.load("franklinGothic.otf", 20);
-    smallFont.load("franklinGothic.otf", 14);
+    font.load("franklinGothic.otf", 16);
+    smallFont.load("franklinGothic.otf", 10);
     
     initArduino();
     
     gui.setup();
-    gui.add(minValue.setup("minValue",1, 0, 255));
+    //gui.add(minValue.setup("minValue",1, 0, 255));
     gui.add(neutral.setup("neutral",500,0,1023));
     gui.add(defineDelta.setup("delta",3,0,10));
     
@@ -26,33 +23,49 @@ void ofApp::update(){
     
     updateArduino();
     rawInputValue = ard.getAnalog(0);
-    mapInputValue = ofMap(rawInputValue, 0, 1023, 100, 500);
+    //mapInputValue = ofMap(rawInputValue, 0, 1023, 100, 500);
     rawOutputValue = ard.getAnalog(1);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
-    plot->update(filterInputValue[1]);
-    plot2->update(filterOutputValue[1]);
+    currentVolume[0] = ofMap(filterInputValue[1], 0, 1023, 0, 40);
+    currentVolume[1] = ofMap(filterOutputValue[1], 0, 1023, 0, 40);
+    propotionVolume[0] = ofMap(currentVolume[0], 0, 40, -30, 60);
+    propotionVolume[1] = ofMap(currentVolume[1], 0, 40, -30, 60);
+    plot->update(currentVolume[0]);
+    plot2->update(currentVolume[1]);
     
-    
+    if(filterInputValue[1] > maxValue[0]){
+        maxValue[0] = filterInputValue[1];
+    }
+    if(filterInputValue[1] < maxValue[0]){
+        minValue[0] = filterInputValue[1];
+    }
+    if(filterOutputValue[1] > maxValue[1]){
+        maxValue[1] = filterInputValue[1];
+    }
+    if(filterOutputValue[1] < maxValue[1]){
+        minValue[1] = filterInputValue[1];
+    }
 }
-
 
 void ofApp::draw(){
     
     ofSetColor(255);
     if (!bSetupArduino){
-        font.drawString("arduino not ready...\n", 20, 200);
+        font.drawString("Connect ready...\n", valueRow1, 20);
     } else {
-        font.drawString("connect succeed!\n", 20,200);
+        font.drawString("Connect succeed!\n", valueRow1,20);
     }
     
-    font.drawString("rawInputValue  :  " + ofToString(rawInputValue), 600, 60);
-    font.drawString("InputValue     :  " + ofToString(filterInputValue[1]), 600, 60 + 30);
-    font.drawString("rawOutputValue :  " + ofToString(rawOutputValue), 600, 60 + 60);
-    font.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), 600, 60 + 90);
-    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
+    font.drawString("Current propotion : " + ofToString(currentVolume[0]) + "Current Volume : " + ofToString(propotionVolume[0]) + "ml", valueRow1, inputValueY);
+    smallFont.drawString("rawInputValue  :  " + ofToString(rawInputValue), valueRow1, inputValueY + 20);
+    smallFont.drawString("InputValue     :  " + ofToString(filterInputValue[1]), valueRow1, inputValueY + 40);
+    font.drawString("Current propotion : " + ofToString(currentVolume[1]) + "Current Volume : " + ofToString(propotionVolume[1]) + "ml", valueRow1, outputValueY);
+    smallFont.drawString("rawOutputValue :  " + ofToString(rawOutputValue), valueRow1, outputValueY + 20);
+    smallFont.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), valueRow1, outputValueY + 40);
+//    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
     
-    gui.draw();
+    //gui.draw();
     
     plot->draw(0, 300, ofGetWidth(), 300);
     plot2->draw(0, 300, ofGetWidth(), 300);
@@ -68,13 +81,12 @@ double ofApp::ceil2(double dIn, int nLen){
 }
 
 void ofApp::initArduino(){
-    buttonState = "digital pin:";
-    potValue = "analog pin:";
-    ard.connect("/dev/cu.usbmodem1411", 57600);
+//    buttonState = "digital pin:";
+//    potValue = "analog pin:";
+    ard.connect("/dev/cu.usbmodem1421", 57600);
     
     ofAddListener(ard.EInitialized, this, &ofApp::setupArduino);
     bSetupArduino    = false;
-    
 }
 
 void ofApp::setupArduino(const int & version) {
@@ -134,28 +146,11 @@ void ofApp::updateArduino(){
     }
 }
 
-void ofApp::digitalPinChanged(const int & pinNum) {
-    // do something with the digital input. here we're simply going to print the pin number and
-    // value to the screen each time it changes
-    buttonState = "digital pin: " + ofToString(pinNum) + " = " + ofToString(ard.getDigital(pinNum));
-}
-
-// analog pin event handler, called whenever an analog pin value has changed
-void ofApp::analogPinChanged(const int & pinNum) {
-    // do something with the analog input. here we're simply going to print the pin number and
-    // value to the screen each time it changes
-    potValue = "analog pin: " + ofToString(pinNum) + " = " + ofToString(ard.getAnalog(pinNum));
-    
-    
-    //settingValue = "minValue: " + ofToString(minValue) + "\n" + "maxValue: " + ofToString(maxValue);
-}
-
-
 void ofApp::setupHistoryPlot(){
     plot = new ofxHistoryPlot(&currentFrameRate, "timeline", ofGetWidth(), false);
     plot->setBackgroundColor(ofColor(0,0,0,0));
     //plot->setShowNumericalInfo(true);
-    plot->setRange(0, 1023);//definable range of plot
+    plot->setRange(-50, 50);//definable range of plot
     plot->setRespectBorders(true);
     plot->setLineWidth(1);
     plot->setCropToRect(true);
@@ -168,7 +163,7 @@ void ofApp::setupHistoryPlot(){
     plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), false);
     plot2->setBackgroundColor(ofColor(0,0,0,0));
     plot2->setColor( ofColor(255,0,255) );
-    plot2->setRange(0, 1023);//definable range of plot
+    plot2->setRange(-50, 50);//definable range of plot
     plot2->setRespectBorders(true);
     plot2->setLineWidth(1);
     plot2->setCropToRect(true);
@@ -178,24 +173,46 @@ void ofApp::setupHistoryPlot(){
     plot2->setSmoothFilter(0.1); //smooth filter strength
 }
 
+void ofApp::sendDigitalArduino02(){
+    ard.sendDigital(3, ARD_LOW);
+    ard.sendDigital(4, ARD_HIGH);
+    ard.sendDigital(5, ARD_HIGH);
+    ard.sendDigital(6, ARD_LOW);
+}
+
+void ofApp::sendDigitalArduino03(){
+    ard.sendDigital(3, ARD_HIGH);
+    ard.sendDigital(4, ARD_LOW);
+    ard.sendDigital(5, ARD_LOW);
+    ard.sendDigital(6, ARD_HIGH);
+}
+
+void ofApp::sendDigitalArduino04(){
+    ard.sendDigital(3, ARD_LOW);
+    ard.sendDigital(4, ARD_LOW);
+    ard.sendDigital(5, ARD_HIGH);
+    ard.sendDigital(6, ARD_HIGH);
+}
+
+//--------------------------------------------------------------
+
 void ofApp::keyPressed(int key){
     switch (key) {
         case 'f':
             ofToggleFullscreen();
             break;
-//        case 'o':
-//            ard.sendDigital(3, ARD_HIGH);
-//            break;
+        case 'c':
+            minValue[1] = 200;
+            maxValue[1] = 200;
+            break;
+            //        case 'o':
+            //            ard.sendDigital(3, ARD_HIGH);
+            //            break;
     }
 }
 
-//--------------------------------------------------------------
+
 void ofApp::keyReleased(int key){
-//    switch (key) {
-//        case 'o':
-//            ard.sendDigital(3, ARD_LOW);
-//            break;
-//    }
 }
 
 //--------------------------------------------------------------
@@ -210,12 +227,11 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    ard.sendDigital(13, ARD_HIGH);
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-    ard.sendDigital(13, ARD_LOW);
 }
 
 //--------------------------------------------------------------
@@ -242,4 +258,20 @@ void ofApp::gotMessage(ofMessage msg){
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
     
 }
+
+void ofApp::digitalPinChanged(const int & pinNum) {
+    // do something with the digital input. here we're simply going to print the pin number and
+    // value to the screen each time it changes
+    buttonState = "digital pin: " + ofToString(pinNum) + " = " + ofToString(ard.getDigital(pinNum));
+}
+
+// analog pin event handler, called whenever an analog pin value has changed
+
+//--------------------------------------------------------------
+void ofApp::analogPinChanged(const int & pinNum) {
+    // do something with the analog input. here we're simply going to print the pin number and
+    // value to the screen each time it changes
+    potValue = "analog pin: " + ofToString(pinNum) + " = " + ofToString(ard.getAnalog(pinNum));
+}
+
 
