@@ -26,6 +26,8 @@ class ofApp : public ofBaseApp{
     ofTrueTypeFont      font;
     ofTrueTypeFont      smallFont;
     
+    void drawLog();
+    
     float width = ofGetWidth()/2;
     float height = ofGetHeight()/2;
     
@@ -35,6 +37,15 @@ class ofApp : public ofBaseApp{
     int filterInputValue[2] = {0};
     int filterOutputValue[2] = {0};
     float a = 0.9;
+    
+    //0:Input, 1:Output
+    int currentVolume[2] = {0};
+    int propotionVolume[2] = {0};
+    int minValue[2] = {0};
+    int maxValue[2] = {0};
+    int manipulateInput, manipulateOutput;
+    
+    float milliSeconds = 0;
     
     float currentFrameRate;
     double ceil2(double dIn, int nLen);
@@ -46,13 +57,18 @@ class ofApp : public ofBaseApp{
     bool bSetupArduino;
     
     ofxPanel gui;
-    ofxFloatSlider minValue;
+    //ofxFloatSlider minValue;
     ofxFloatSlider neutral;
     ofxFloatSlider defineDelta;
     
     ofxHistoryPlot * plot;
     ofxHistoryPlot * plot2;
     void setupHistoryPlot();
+    
+    int valueRow1 = 20;
+    int valueRow3 = width * 4/3 + 20;
+    int inputValueY = 80;
+    int outputValueY = 200;
     
     //control---------------------------------
     int delta;
@@ -73,6 +89,11 @@ private:
     void digitalPinChanged(const int & pinNum);
     void analogPinChanged(const int & pinNum);
     void updateArduino();
+    //void sendDigitalArduino01();
+    void sendDigitalArduino02();
+    void sendDigitalArduino03();
+    void sendDigitalArduino04();
+    void controlPomp(int x, int y);
     
     string buttonState;
     string potValue;
