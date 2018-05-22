@@ -20,10 +20,10 @@ void ofApp::update(){
     rawOutputValue = ard.getAnalog(1);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
-    propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, 40);
-    propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 40);
-    currentVolume[0] = ofMap(propotionVolume[0], 0, 40, -30, 60);
-    currentVolume[1] = ofMap(propotionVolume[1], 0, 40, -30, 60);
+    propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, 20);
+    propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 20);
+    currentVolume[0] = ofMap(propotionVolume[0], 0, 20, -30, 60);
+    currentVolume[1] = ofMap(propotionVolume[1], 0, 20, -30, 60);
     
     if(filterInputValue[1] > maxValue[0]){
         maxValue[0] = filterInputValue[1];
@@ -52,7 +52,7 @@ void ofApp::update(){
 }
 
 void ofApp::checktime(){
-    if(ofGetElapsedTimeMillis() - startTime < 36 * delta) {
+    if(ofGetElapsedTimeMillis() - startTime < 71 * delta) {
         bDeform = true;
     } else {
         bDeform = false;
@@ -104,7 +104,7 @@ void ofApp::controlPomp(int input, int output){
         bPolarity = false;
     }
     delta = abs(input - output);
-    if(delta > 3) {
+    if(delta > 2) {
         //startDeform(delta);
         bDeform = true;
         startTime = ofGetElapsedTimeMillis();
@@ -166,7 +166,10 @@ void ofApp::drawLog(){
     smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[0], valueCol[1] + 80);
     
     smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[2], valueCol[0]);
-    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[2], valueCol[0] + 30);
+    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[2], valueCol[0] + 20);
+    smallFont.drawString("INPUT", valueRow[2], valueCol[0] + 50);
+    ofSetColor(255, 0, 0);
+    smallFont.drawString("OUTPUT", valueRow[2], valueCol[0] + 70);
     
     //    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
 }
@@ -273,12 +276,13 @@ void ofApp::analogPinChanged(const int & pinNum) {
 void ofApp::setupHistoryPlot(){
     plot = new ofxHistoryPlot(&currentFrameRate, "timeline", ofGetWidth(), false);
     plot->setBackgroundColor(ofColor(0,0,0,0));
+    plot->setColor( ofColor(255,255,255) );
     //plot->setShowNumericalInfo(true);
     plot->setRange(-100, 100);//definable range of plot
-    plot->setRespectBorders(true);
+    plot->setRespectBorders(false);
     plot->setLineWidth(1);
-    plot->setCropToRect(true);
-    plot->setDrawGrid(true);
+    plot->setCropToRect(false);
+    plot->setDrawGrid(false);
     plot->setGridUnit(16);
     plot->setGridColor(ofColor(100));
     plot->setShowSmoothedCurve(false);
@@ -286,12 +290,12 @@ void ofApp::setupHistoryPlot(){
     
     plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), false);
     plot2->setBackgroundColor(ofColor(0,0,0,0));
-    plot2->setColor( ofColor(255,0,255) );
+    plot2->setColor( ofColor(255,0,0) );
     plot2->setRange(-100, 100);//definable range of plot
-    plot2->setRespectBorders(true);
+    plot2->setRespectBorders(false);
     plot2->setLineWidth(1);
-    plot2->setCropToRect(true);
-    plot2->setDrawGrid(true);
+    plot2->setCropToRect(false);
+    plot2->setDrawGrid(false);
     plot2->setGridUnit(16);
     plot2->setShowSmoothedCurve(false);
     plot2->setSmoothFilter(0.1); //smooth filter strength
