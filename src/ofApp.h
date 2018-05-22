@@ -33,6 +33,7 @@ public:
     //output
     bool bDeform = false;
     int delta;
+    bool bPolarity = false;
     int startTime;
     float milliSeconds = 0;
     
