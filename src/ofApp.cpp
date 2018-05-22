@@ -10,9 +10,9 @@ void ofApp::setup(){
     initArduino();
     
     gui.setup();
-    //gui.add(minValue.setup("minValue",1, 0, 255));
-    gui.add(neutral.setup("neutral",500,0,1023));
-    gui.add(defineDelta.setup("delta",3,0,10));
+    gui.add(operateMinValue.setup("minValue",200, 0, 1000));
+    //gui.add(neutral.setup("neutral",500,0,1023));
+    //gui.add(defineDelta.setup("delta",3,0,10));
     
     setupHistoryPlot();
 }
@@ -27,45 +27,71 @@ void ofApp::update(){
     rawOutputValue = ard.getAnalog(1);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
-    currentVolume[0] = ofMap(filterInputValue[1], 0, 1023, 0, 40);
-    currentVolume[1] = ofMap(filterOutputValue[1], 0, 1023, 0, 40);
-    propotionVolume[0] = ofMap(currentVolume[0], 0, 40, -30, 60);
-    propotionVolume[1] = ofMap(currentVolume[1], 0, 40, -30, 60);
-    plot->update(currentVolume[0]);
-    plot2->update(currentVolume[1]);
+    propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, 40);
+    propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 40);
+    currentVolume[0] = ofMap(propotionVolume[0], 0, 40, -30, 60);
+    currentVolume[1] = ofMap(propotionVolume[1], 0, 40, -30, 60);
+
     
     if(filterInputValue[1] > maxValue[0]){
         maxValue[0] = filterInputValue[1];
     }
-    if(filterInputValue[1] < maxValue[0]){
+    if(filterInputValue[1] < minValue[0]){
         minValue[0] = filterInputValue[1];
     }
     if(filterOutputValue[1] > maxValue[1]){
-        maxValue[1] = filterInputValue[1];
+        maxValue[1] = filterOutputValue[1];
     }
-    if(filterOutputValue[1] < maxValue[1]){
-        minValue[1] = filterInputValue[1];
+    if(filterOutputValue[1] < minValue[1]){
+        minValue[1] = filterOutputValue[1];
     }
+    
+    plot->update(currentVolume[0]);
+    plot2->update(currentVolume[1]);
+    
+    milliSeconds = ofGetElapsedTimeMillis();
+    
+    if(bPushing) checktime();
 }
 
 void ofApp::draw(){
+    controlPomp(propotionVolume[0], propotionVolume[1]);
+    
+    if(bPushing) push();
+    else stopPush();
+    
+    if (rawInputValue > 500) {
+        ard.sendDigital(12, ARD_HIGH);
+        //sendDigitalArduino02();
+    } else {
+        ard.sendDigital(12, ARD_LOW);
+        //sendDigitalArduino03();
+    }
     
     ofSetColor(255);
     if (!bSetupArduino){
-        font.drawString("Connect ready...\n", valueRow1, 20);
+        font.drawString("Connect ready...\n", valueRow3, 50);
     } else {
-        font.drawString("Connect succeed!\n", valueRow1,20);
+        font.drawString("Connect succeed!\n", valueRow3, 50);
     }
     
-    font.drawString("Current propotion : " + ofToString(currentVolume[0]) + "Current Volume : " + ofToString(propotionVolume[0]) + "ml", valueRow1, inputValueY);
+    font.drawString("Current propotion : " + ofToString(propotionVolume[0]) + ", Current Volume : " + ofToString(currentVolume[0]) + "ml", valueRow1, inputValueY);
     smallFont.drawString("rawInputValue  :  " + ofToString(rawInputValue), valueRow1, inputValueY + 20);
     smallFont.drawString("InputValue     :  " + ofToString(filterInputValue[1]), valueRow1, inputValueY + 40);
-    font.drawString("Current propotion : " + ofToString(currentVolume[1]) + "Current Volume : " + ofToString(propotionVolume[1]) + "ml", valueRow1, outputValueY);
+    smallFont.drawString("minValue  :  " + ofToString(minValue[0]), valueRow1, inputValueY + 60);
+    smallFont.drawString("maxValue     :  " + ofToString(maxValue[0]), valueRow1, inputValueY + 80);
+    font.drawString("Current propotion : " + ofToString(propotionVolume[1]) + ", Current Volume : " + ofToString(currentVolume[1]) + "ml", valueRow1, outputValueY);
     smallFont.drawString("rawOutputValue :  " + ofToString(rawOutputValue), valueRow1, outputValueY + 20);
     smallFont.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), valueRow1, outputValueY + 40);
+    smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow1, outputValueY + 60);
+    smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow1, outputValueY + 80);
+    
+    smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow3, inputValueY);
+    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow3, inputValueY + 30);
+    
 //    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
     
-    //gui.draw();
+    gui.draw();
     
     plot->draw(0, 300, ofGetWidth(), 300);
     plot2->draw(0, 300, ofGetWidth(), 300);
@@ -73,11 +99,35 @@ void ofApp::draw(){
     filterOutputValue[0] = filterOutputValue[1];
 }
 
+void ofApp::startPush(int level){
+    bPushing = true;
+    startTime = ofGetElapsedTimeMillis();
+}
+
+void ofApp::push(){
+    ard.sendDigital(13, ARD_HIGH);
+}
+
+void ofApp::stopPush(){
+    ard.sendDigital(13, ARD_LOW);
+}
+
+void ofApp::checktime(){
+    if(ofGetElapsedTimeMillis() - startTime < 3600 * pushLevel) bPushing = true;
+    else bPushing = false;
+}
+
 double ofApp::ceil2(double dIn, int nLen){
     double dOut;
     dOut = dIn * pow(10.0, nLen);
     dOut = (double)(int)(dOut + 0.9);
     return dOut * pow(10.0, -nLen);
+}
+
+void ofApp::controlPomp(int input, int output){
+    int difference = input - output;
+    pushLevel = difference;
+    if(difference > 2) startPush(difference);
 }
 
 void ofApp::initArduino(){
@@ -90,14 +140,8 @@ void ofApp::initArduino(){
 }
 
 void ofApp::setupArduino(const int & version) {
-    
-    // remove listener because we don't need it anymore
     ofRemoveListener(ard.EInitialized, this, &ofApp::setupArduino);
-    
-    // it is now safe to send commands to the Arduino
     bSetupArduino = true;
-    
-    // print firmware name and version to the console
     ofLogNotice() << ard.getFirmwareName();
     ofLogNotice() << "firmata v" << ard.getMajorFirmwareVersion() << "." << ard.getMinorFirmwareVersion();
     
@@ -105,36 +149,24 @@ void ofApp::setupArduino(const int & version) {
     // Refer to them as pins 14 - 19 if using StandardFirmata from Arduino 1.0.
     // If using Arduino 0022 or older, then use 16 - 21.
     // Firmata pin numbering changed in version 2.3 (which is included in Arduino 1.0)
-    
-    // set pins D2 and A5 to digital input
     ard.sendDigitalPinMode(2, ARD_INPUT);
     ard.sendDigitalPinMode(19, ARD_INPUT);  // pin 21 if using StandardFirmata from Arduino 0022 or older
-    
-    // set pin filterInputValue to analog input
     ard.sendAnalogPinReporting(0, ARD_ANALOG);
     ard.sendAnalogPinReporting(1, ARD_ANALOG);
     
-    
-    // set pin from D3 to D6 to digital output
     ard.sendDigitalPinMode(3, ARD_OUTPUT);
     ard.sendDigitalPinMode(4, ARD_OUTPUT);
     ard.sendDigitalPinMode(5, ARD_OUTPUT);
     ard.sendDigitalPinMode(6, ARD_OUTPUT);
+    ard.sendDigitalPinMode(12, ARD_OUTPUT);
+    ard.sendDigitalPinMode(18, ARD_OUTPUT);
     
-    // set pin D13 as digital output
-    ard.sendDigitalPinMode(13, ARD_OUTPUT);
-    
-    // set pin A4 as digital output
-    ard.sendDigitalPinMode(18, ARD_OUTPUT);  // pin 20 if using StandardFirmata from Arduino 0022 or older
-    
-    // set pin D11 as PWM (analog output)
     ard.sendDigitalPinMode(11, ARD_PWM);
     
     // attach a servo to pin D9
     // servo motors can only be attached to pin D3, D5, D6, D9, D10, or D11
     ard.sendServoAttach(9);
     
-    // Listen for changes on the digital and analog pins
     ofAddListener(ard.EDigitalPinChanged, this, &ofApp::digitalPinChanged);
     ofAddListener(ard.EAnalogPinChanged, this, &ofApp::analogPinChanged);
 }
@@ -150,7 +182,7 @@ void ofApp::setupHistoryPlot(){
     plot = new ofxHistoryPlot(&currentFrameRate, "timeline", ofGetWidth(), false);
     plot->setBackgroundColor(ofColor(0,0,0,0));
     //plot->setShowNumericalInfo(true);
-    plot->setRange(-50, 50);//definable range of plot
+    plot->setRange(-100, 100);//definable range of plot
     plot->setRespectBorders(true);
     plot->setLineWidth(1);
     plot->setCropToRect(true);
@@ -163,7 +195,7 @@ void ofApp::setupHistoryPlot(){
     plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), false);
     plot2->setBackgroundColor(ofColor(0,0,0,0));
     plot2->setColor( ofColor(255,0,255) );
-    plot2->setRange(-50, 50);//definable range of plot
+    plot2->setRange(-100, 100);//definable range of plot
     plot2->setRespectBorders(true);
     plot2->setLineWidth(1);
     plot2->setCropToRect(true);
@@ -173,6 +205,7 @@ void ofApp::setupHistoryPlot(){
     plot2->setSmoothFilter(0.1); //smooth filter strength
 }
 
+//deflation
 void ofApp::sendDigitalArduino02(){
     ard.sendDigital(3, ARD_LOW);
     ard.sendDigital(4, ARD_HIGH);
@@ -180,6 +213,7 @@ void ofApp::sendDigitalArduino02(){
     ard.sendDigital(6, ARD_LOW);
 }
 
+//inflation
 void ofApp::sendDigitalArduino03(){
     ard.sendDigital(3, ARD_HIGH);
     ard.sendDigital(4, ARD_LOW);
@@ -187,6 +221,7 @@ void ofApp::sendDigitalArduino03(){
     ard.sendDigital(6, ARD_HIGH);
 }
 
+//maintain
 void ofApp::sendDigitalArduino04(){
     ard.sendDigital(3, ARD_LOW);
     ard.sendDigital(4, ARD_LOW);
@@ -194,69 +229,57 @@ void ofApp::sendDigitalArduino04(){
     ard.sendDigital(6, ARD_HIGH);
 }
 
-//--------------------------------------------------------------
-
 void ofApp::keyPressed(int key){
     switch (key) {
         case 'f':
             ofToggleFullscreen();
             break;
         case 'c':
-            minValue[1] = 200;
-            maxValue[1] = 200;
+            minValue[0] = operateMinValue;
+            maxValue[0] = 10;
+            minValue[1] = operateMinValue;
+            maxValue[1] = 10;
             break;
-            //        case 'o':
-            //            ard.sendDigital(3, ARD_HIGH);
-            //            break;
+        case 'k':
+            milliSeconds = 0;
+            break;
+//        case 'd':
+//            ard.sendDigital(13, ARD_HIGH);
+//            break;
+        case OF_KEY_RIGHT:
+            //ard.sendServo(9, 180, false);
+            ard.sendDigital(13, ARD_HIGH);  // pin 20 if using StandardFirmata from Arduino 0022 or older
+            break;
+        case OF_KEY_LEFT:
+            // rotate servo head to 0 degrees
+            //ard.sendServo(9, 0, false);
+            ard.sendDigital(13, ARD_LOW);  // pin 20 if using StandardFirmata from Arduino 0022 or older
+            break;
+        default:
+            break;
     }
 }
 
 
 void ofApp::keyReleased(int key){
 }
-
-//--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-    
 }
-
-//--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-    
 }
-
-//--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    
 }
-
-//--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
 }
-
-//--------------------------------------------------------------
 void ofApp::mouseEntered(int x, int y){
-    
 }
-
-//--------------------------------------------------------------
 void ofApp::mouseExited(int x, int y){
-    
 }
-
-//--------------------------------------------------------------
 void ofApp::windowResized(int w, int h){
-    
 }
-
-//--------------------------------------------------------------
 void ofApp::gotMessage(ofMessage msg){
-    
 }
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-    
+void ofApp::dragEvent(ofDragInfo dragInfo){
 }
 
 void ofApp::digitalPinChanged(const int & pinNum) {
@@ -265,9 +288,6 @@ void ofApp::digitalPinChanged(const int & pinNum) {
     buttonState = "digital pin: " + ofToString(pinNum) + " = " + ofToString(ard.getDigital(pinNum));
 }
 
-// analog pin event handler, called whenever an analog pin value has changed
-
-//--------------------------------------------------------------
 void ofApp::analogPinChanged(const int & pinNum) {
     // do something with the analog input. here we're simply going to print the pin number and
     // value to the screen each time it changes

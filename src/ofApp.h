@@ -23,6 +23,11 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
     
+    void startPush(int level);
+    void stopPush();
+    void push();
+    void checktime();
+    
     ofTrueTypeFont      font;
     ofTrueTypeFont      smallFont;
     
@@ -57,7 +62,7 @@ class ofApp : public ofBaseApp{
     bool bSetupArduino;
     
     ofxPanel gui;
-    //ofxFloatSlider minValue;
+    ofxFloatSlider operateMinValue;
     ofxFloatSlider neutral;
     ofxFloatSlider defineDelta;
     
@@ -97,4 +102,8 @@ private:
     
     string buttonState;
     string potValue;
+    
+    bool bPushing = false;
+    int pushLevel;
+    int startTime;
 };
