@@ -166,7 +166,10 @@ void ofApp::drawLog(){
     smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[0], valueCol[1] + 80);
     
     smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[2], valueCol[0]);
-    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[2], valueCol[0] + 30);
+    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[2], valueCol[0] + 20);
+    smallFont.drawString("INPUT", valueRow[2], valueCol[0] + 50);
+    ofSetColor(255, 0, 0);
+    smallFont.drawString("OUTPUT", valueRow[2], valueCol[0] + 70);
     
     //    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
 }
@@ -273,12 +276,13 @@ void ofApp::analogPinChanged(const int & pinNum) {
 void ofApp::setupHistoryPlot(){
     plot = new ofxHistoryPlot(&currentFrameRate, "timeline", ofGetWidth(), false);
     plot->setBackgroundColor(ofColor(0,0,0,0));
+    plot->setColor( ofColor(255,255,255) );
     //plot->setShowNumericalInfo(true);
     plot->setRange(-100, 100);//definable range of plot
-    plot->setRespectBorders(true);
+    plot->setRespectBorders(false);
     plot->setLineWidth(1);
-    plot->setCropToRect(true);
-    plot->setDrawGrid(true);
+    plot->setCropToRect(false);
+    plot->setDrawGrid(false);
     plot->setGridUnit(16);
     plot->setGridColor(ofColor(100));
     plot->setShowSmoothedCurve(false);
@@ -286,12 +290,12 @@ void ofApp::setupHistoryPlot(){
     
     plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), false);
     plot2->setBackgroundColor(ofColor(0,0,0,0));
-    plot2->setColor( ofColor(255,0,255) );
+    plot2->setColor( ofColor(255,0,0) );
     plot2->setRange(-100, 100);//definable range of plot
-    plot2->setRespectBorders(true);
+    plot2->setRespectBorders(false);
     plot2->setLineWidth(1);
-    plot2->setCropToRect(true);
-    plot2->setDrawGrid(true);
+    plot2->setCropToRect(false);
+    plot2->setDrawGrid(false);
     plot2->setGridUnit(16);
     plot2->setShowSmoothedCurve(false);
     plot2->setSmoothFilter(0.1); //smooth filter strength
