@@ -276,6 +276,7 @@ void ofApp::mouseEntered(int x, int y){
 void ofApp::mouseExited(int x, int y){
 }
 void ofApp::windowResized(int w, int h){
+    //あああ
 }
 void ofApp::gotMessage(ofMessage msg){
 }
