@@ -5,20 +5,16 @@ void ofApp::setup(){
     ofSetFrameRate(60);
     font.load("franklinGothic.otf", 16);
     smallFont.load("franklinGothic.otf", 10);
-    
     initArduino();
-    
     gui.setup();
     gui.add(operateMinValue.setup("minValue",200, 0, 1000));
-    
     setupHistoryPlot();
 }
 
 void ofApp::update(){
     currentFrameRate = ofGetFrameRate();
-    neutral = (float)ceil2((double)neutral,1);
-    
     updateArduino();
+    
     rawInputValue = ard.getAnalog(0);
     //mapInputValue = ofMap(rawInputValue, 0, 1023, 100, 500);
     rawOutputValue = ard.getAnalog(1);
@@ -28,7 +24,6 @@ void ofApp::update(){
     propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 40);
     currentVolume[0] = ofMap(propotionVolume[0], 0, 40, -30, 60);
     currentVolume[1] = ofMap(propotionVolume[1], 0, 40, -30, 60);
-    
     
     if(filterInputValue[1] > maxValue[0]){
         maxValue[0] = filterInputValue[1];
@@ -47,23 +42,45 @@ void ofApp::update(){
     plot2->update(currentVolume[1]);
     
     milliSeconds = ofGetElapsedTimeMillis();
-    
-    if(bPushing) checktime();
+    //--
+    //"change false"
+    //if true, change false after elapased time * delta.
+    if(bDeform) {
+        checktime();
+    }
+    //--
+}
+
+void ofApp::checktime(){
+    if(ofGetElapsedTimeMillis() - startTime < 3600 * delta) {
+        bDeform = true;
+    } else {
+        bDeform = false;
+    }
 }
 
 void ofApp::draw(){
+    //--
+    //"change true"
+    //compare input and output value, if delta > value, change true and timer starting.
     controlPomp(propotionVolume[0], propotionVolume[1]);
+    //--
     
-    if(bPushing) push();
-    else stopPush();
-    
-    if (rawInputValue > 500) {
-        ard.sendDigital(12, ARD_HIGH);
-        //sendDigitalArduino02();
+    //***--write your control method--***
+    if(bDeform) {
+        ard.sendDigital(13, ARD_HIGH);
     } else {
-        ard.sendDigital(12, ARD_LOW);
-        //sendDigitalArduino03();
+        ard.sendDigital(13, ARD_LOW);
     }
+    //***----***
+    
+//    if (rawInputValue > 500) {
+//        ard.sendDigital(12, ARD_HIGH);
+//        //sendDigitalArduino02();
+//    } else {
+//        ard.sendDigital(12, ARD_LOW);
+//        //sendDigitalArduino03();
+//    }
     
     drawLog();
     gui.draw();
@@ -74,28 +91,26 @@ void ofApp::draw(){
     filterOutputValue[0] = filterOutputValue[1];
 }
 
-void ofApp::startPush(int level){
-    bPushing = true;
-    startTime = ofGetElapsedTimeMillis();
-}
-
-void ofApp::push(){
-    ard.sendDigital(13, ARD_HIGH);
-}
-
-void ofApp::stopPush(){
-    ard.sendDigital(13, ARD_LOW);
-}
-
-void ofApp::checktime(){
-    if(ofGetElapsedTimeMillis() - startTime < 3600 * pushLevel) bPushing = true;
-    else bPushing = false;
-}
-
 void ofApp::controlPomp(int input, int output){
-    int difference = input - output;
-    pushLevel = difference;
-    if(difference > 2) startPush(difference);
+    delta = input - output;
+    if(delta > 2) {
+        //startDeform(delta);
+        bDeform = true;
+        startTime = ofGetElapsedTimeMillis();
+    }
+}
+
+void ofApp::startDeform(int level){
+//    bDeform = true;
+//    startTime = ofGetElapsedTimeMillis();
+}
+
+void ofApp::actuate(){
+    //ard.sendDigital(13, ARD_HIGH);
+}
+
+void ofApp::stopActuate(){
+    //ard.sendDigital(13, ARD_LOW);
 }
 
 void ofApp::sendDigitalArduinoDeflation(){
@@ -277,3 +292,4 @@ double ofApp::ceil2(double dIn, int nLen){
     dOut = (double)(int)(dOut + 0.9);
     return dOut * pow(10.0, -nLen);
 }
+// = (float)ceil2((double)neutral,1);
