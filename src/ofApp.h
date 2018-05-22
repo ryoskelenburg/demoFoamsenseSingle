@@ -5,43 +5,36 @@
 #include "ofxHistoryPlot.h"
 
 class ofApp : public ofBaseApp{
+    
+public:
+    void setup();
+    void update();
+    void draw();
+    void keyPressed(int key);
+    void keyReleased(int key);
+    void mouseMoved(int x, int y );
+    void mouseDragged(int x, int y, int button);
+    void mousePressed(int x, int y, int button);
+    void mouseReleased(int x, int y, int button);
+    void mouseEntered(int x, int y);
+    void mouseExited(int x, int y);
+    void windowResized(int w, int h);
+    void dragEvent(ofDragInfo dragInfo);
+    void gotMessage(ofMessage msg);
 
-	public:
-		void setup();
-		void update();
-		void draw();
-
-		void keyPressed(int key);
-		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
-		void windowResized(int w, int h);
-		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);
-    
-    void startPush(int level);
-    void stopPush();
-    void push();
-    void checktime();
-    
-    ofTrueTypeFont      font;
-    ofTrueTypeFont      smallFont;
-    
-    void drawLog();
-    
-    float width = ofGetWidth()/2;
-    float height = ofGetHeight()/2;
-    
+    //Input
     int rawInputValue = 0;
     int rawOutputValue = 0;
     int mapInputValue = 0;
     int filterInputValue[2] = {0};
     int filterOutputValue[2] = {0};
     float a = 0.9;
+    
+    //output
+    void startPush(int level);
+    void stopPush();
+    void push();
+    void checktime();
     
     //0:Input, 1:Output
     int currentVolume[2] = {0};
@@ -52,58 +45,48 @@ class ofApp : public ofBaseApp{
     
     float milliSeconds = 0;
     
-    float currentFrameRate;
-    double ceil2(double dIn, int nLen);
-    
-    void drawPressSponge(int _value);
-    void defineSponge(int _analog, int _define);
-    
-    ofArduino ard;
-    bool bSetupArduino;
-    
+    //ofxgui
     ofxPanel gui;
     ofxFloatSlider operateMinValue;
     ofxFloatSlider neutral;
     ofxFloatSlider defineDelta;
     
+    //plot
     ofxHistoryPlot * plot;
     ofxHistoryPlot * plot2;
     void setupHistoryPlot();
-    
-    int valueRow1 = 20;
-    int valueRow3 = width * 4/3 + 20;
-    int inputValueY = 80;
-    int outputValueY = 200;
-    
-    //control---------------------------------
-    int delta;
-    int absDelta;
-    //int defineDelta = 3;//***変化量の閾値***
-    
-    //int neutral = 750;//***ニュートラルの値***
-    int defineNeutral = 20;//***ニュートラルの閾値***
-    int identNeutral;
-    
-    int condition;
-    
-    //------------------------------------------
+    float currentFrameRate;
 
+    //graphic
+    float width = ofGetWidth()/2;
+    float height = ofGetHeight()/2;
+    ofTrueTypeFont      font;
+    ofTrueTypeFont      smallFont;
+    float valueRow[3] = {20, 20 + width * 2/3, 20 + width * 4/3};
+    float valueCol[3] = {100, 100 * 2, 100 * 3};
+    void drawLog();
+    
 private:
+    //arduino
+    ofArduino ard;
+    bool bSetupArduino;
+    
     void initArduino();
     void setupArduino(const int & version);
     void digitalPinChanged(const int & pinNum);
     void analogPinChanged(const int & pinNum);
     void updateArduino();
-    //void sendDigitalArduino01();
-    void sendDigitalArduino02();
-    void sendDigitalArduino03();
-    void sendDigitalArduino04();
-    void controlPomp(int x, int y);
     
     string buttonState;
     string potValue;
     
+    void sendDigitalArduinoDeflation();
+    void sendDigitalArduinoInflation();
+    void sendDigitalArduinoMaintain();
+    void controlPomp(int x, int y);
     bool bPushing = false;
     int pushLevel;
     int startTime;
+    
+    double ceil2(double dIn, int nLen);
 };
