@@ -31,10 +31,19 @@ public:
     float a = 0.9;
     
     //output
-    void startPush(int level);
-    void stopPush();
-    void push();
+    bool bDeform = false;
+    int delta;
+    int startTime;
+    float milliSeconds = 0;
+    
+    void startDeform(int level);
+    void actuate();
+    void stopActuate();
     void checktime();
+    void controlPomp(int x, int y);
+    void sendDigitalArduinoDeflation();
+    void sendDigitalArduinoInflation();
+    void sendDigitalArduinoMaintain();
     
     //0:Input, 1:Output
     int currentVolume[2] = {0};
@@ -42,8 +51,6 @@ public:
     int minValue[2] = {0};
     int maxValue[2] = {0};
     int manipulateInput, manipulateOutput;
-    
-    float milliSeconds = 0;
     
     //ofxgui
     ofxPanel gui;
@@ -79,14 +86,6 @@ private:
     
     string buttonState;
     string potValue;
-    
-    void sendDigitalArduinoDeflation();
-    void sendDigitalArduinoInflation();
-    void sendDigitalArduinoMaintain();
-    void controlPomp(int x, int y);
-    bool bPushing = false;
-    int pushLevel;
-    int startTime;
     
     double ceil2(double dIn, int nLen);
 };
