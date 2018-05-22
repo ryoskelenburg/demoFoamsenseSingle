@@ -20,10 +20,10 @@ void ofApp::update(){
     rawOutputValue = ard.getAnalog(1);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
-    propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, 40);
-    propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 40);
-    currentVolume[0] = ofMap(propotionVolume[0], 0, 40, -30, 60);
-    currentVolume[1] = ofMap(propotionVolume[1], 0, 40, -30, 60);
+    propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, 20);
+    propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 20);
+    currentVolume[0] = ofMap(propotionVolume[0], 0, 20, -30, 60);
+    currentVolume[1] = ofMap(propotionVolume[1], 0, 20, -30, 60);
     
     if(filterInputValue[1] > maxValue[0]){
         maxValue[0] = filterInputValue[1];
@@ -52,7 +52,7 @@ void ofApp::update(){
 }
 
 void ofApp::checktime(){
-    if(ofGetElapsedTimeMillis() - startTime < 36 * delta) {
+    if(ofGetElapsedTimeMillis() - startTime < 71 * delta) {
         bDeform = true;
     } else {
         bDeform = false;
@@ -104,7 +104,7 @@ void ofApp::controlPomp(int input, int output){
         bPolarity = false;
     }
     delta = abs(input - output);
-    if(delta > 3) {
+    if(delta > 2) {
         //startDeform(delta);
         bDeform = true;
         startTime = ofGetElapsedTimeMillis();
