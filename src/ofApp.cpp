@@ -69,8 +69,14 @@ void ofApp::draw(){
     //***--write your control method--***
     if(bDeform) {
         ard.sendDigital(13, ARD_HIGH);
+        if(bPolarity){
+            sendDigitalArduinoInflation();
+        }else{
+            sendDigitalArduinoDeflation();
+        }
     } else {
         ard.sendDigital(13, ARD_LOW);
+        sendDigitalArduinoMaintain();
     }
     //***----***
     
@@ -92,8 +98,13 @@ void ofApp::draw(){
 }
 
 void ofApp::controlPomp(int input, int output){
+    if ((input - output) > 0) {
+        bPolarity = true;
+    } else if ((input - output) < 0){
+        bPolarity = false;
+    }
     delta = abs(input - output);
-    if(delta > 2) {
+    if(delta > 3) {
         //startDeform(delta);
         bDeform = true;
         startTime = ofGetElapsedTimeMillis();
