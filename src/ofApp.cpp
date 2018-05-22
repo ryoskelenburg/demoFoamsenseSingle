@@ -52,7 +52,7 @@ void ofApp::update(){
 }
 
 void ofApp::checktime(){
-    if(ofGetElapsedTimeMillis() - startTime < 3600 * delta) {
+    if(ofGetElapsedTimeMillis() - startTime < 36 * delta) {
         bDeform = true;
     } else {
         bDeform = false;
@@ -92,7 +92,7 @@ void ofApp::draw(){
 }
 
 void ofApp::controlPomp(int input, int output){
-    delta = input - output;
+    delta = abs(input - output);
     if(delta > 2) {
         //startDeform(delta);
         bDeform = true;
