@@ -56,8 +56,7 @@ public:
     //ofxgui
     ofxPanel gui;
     ofxFloatSlider operateMinValue;
-    ofxFloatSlider neutral;
-    ofxFloatSlider defineDelta;
+    ofxFloatSlider operateMaxValue;
     
     //plot
     ofxHistoryPlot * plot;
