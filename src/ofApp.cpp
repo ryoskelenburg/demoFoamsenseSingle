@@ -7,8 +7,10 @@ void ofApp::setup(){
     smallFont.load("franklinGothic.otf", 10);
     initArduino();
     gui.setup();
-    gui.add(operateMinValue.setup("minValue",200, 0, 1023));
-    gui.add(operateMaxValue.setup("MaxValue",400, 0, 1023));
+    gui.add(operateMinValueA0.setup("minValue: A0",300, 0, 1023));
+    gui.add(operateMaxValueA0.setup("MaxValue: A0",500, 0, 1023));
+    gui.add(operateMinValueA1.setup("minValue: A1",200, 0, 1023));
+    gui.add(operateMaxValueA1.setup("MaxValue: A1",400, 0, 1023));
     setupHistoryPlot();
 }
 
@@ -150,27 +152,27 @@ void ofApp::drawLog(){
     ofSetColor(255);
     
     if (!bSetupArduino){
-        font.drawString("Connect ready...\n", valueRow[2], 50);
+        font.drawString("Connect ready...\n", valueRow[0], valueCol[1]);
     } else {
-        font.drawString("Connect succeed!\n", valueRow[2], 50);
+        font.drawString("Connect succeed!\n", valueRow[0], valueCol[1]);
     }
     
-    font.drawString("Current propotion : " + ofToString(propotionVolume[0]) + ", Current Volume : " + ofToString(currentVolume[0]) + "ml", valueRow[0], valueCol[0]);
-    smallFont.drawString("rawInputValue  :  " + ofToString(rawInputValue), valueRow[0], valueCol[0] + 20);
-    smallFont.drawString("InputValue     :  " + ofToString(filterInputValue[1]), valueRow[0], valueCol[0] + 40);
-    smallFont.drawString("minValue  :  " + ofToString(minValue[0]), valueRow[0], valueCol[0] + 60);
-    smallFont.drawString("maxValue     :  " + ofToString(maxValue[0]), valueRow[0], valueCol[0] + 80);
-    font.drawString("Current propotion : " + ofToString(propotionVolume[1]) + ", Current Volume : " + ofToString(currentVolume[1]) + "ml", valueRow[0], valueCol[1]);
-    smallFont.drawString("rawOutputValue :  " + ofToString(rawOutputValue), valueRow[0], valueCol[1] + 20);
-    smallFont.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), valueRow[0], valueCol[1] + 40);
-    smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow[0], valueCol[1] + 60);
-    smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[0], valueCol[1] + 80);
+    font.drawString("Current propotion : " + ofToString(propotionVolume[0]) + ", Current Volume : " + ofToString(currentVolume[0]) + "ml", valueRow[2], valueCol[0]);
+    smallFont.drawString("rawInputValue  :  " + ofToString(rawInputValue), valueRow[2], valueCol[0] + 20);
+    smallFont.drawString("InputValue     :  " + ofToString(filterInputValue[1]), valueRow[2], valueCol[0] + 40);
+    smallFont.drawString("minValue  :  " + ofToString(minValue[0]), valueRow[2], valueCol[0] + 60);
+    smallFont.drawString("maxValue     :  " + ofToString(maxValue[0]), valueRow[2], valueCol[0] + 80);
+    font.drawString("Current propotion : " + ofToString(propotionVolume[1]) + ", Current Volume : " + ofToString(currentVolume[1]) + "ml", valueRow[2], valueCol[1]);
+    smallFont.drawString("rawOutputValue :  " + ofToString(rawOutputValue), valueRow[2], valueCol[1] + 20);
+    smallFont.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), valueRow[2], valueCol[1] + 40);
+    smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow[2], valueCol[1] + 60);
+    smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[2], valueCol[1] + 80);
     
-    smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[2], valueCol[0]);
-    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[2], valueCol[0] + 20);
-    smallFont.drawString("INPUT", valueRow[2], valueCol[0] + 50);
+    smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[0], valueCol[1] + 30);
+    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
+    smallFont.drawString("--------- INPUT", valueRow[0], valueCol[1] + 80);
     ofSetColor(255, 0, 0);
-    smallFont.drawString("OUTPUT", valueRow[2], valueCol[0] + 70);
+    smallFont.drawString("--------- OUTPUT", valueRow[0], valueCol[1] + 100);
     
     //    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
 }
@@ -181,10 +183,12 @@ void ofApp::keyPressed(int key){
             ofToggleFullscreen();
             break;
         case 'c':
-            minValue[0] = 0;
-            maxValue[0] = 1024;
-            minValue[1] = operateMinValue;
-            maxValue[1] = operateMaxValue;
+//            minValue[0] = 0;
+//            maxValue[0] = 1024;
+            minValue[0] = operateMinValueA0;
+            maxValue[0] = operateMaxValueA0;
+            minValue[1] = operateMinValueA1;
+            maxValue[1] = operateMaxValueA1;
             break;
         case 'k':
             milliSeconds = 0;

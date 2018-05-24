@@ -55,8 +55,10 @@ public:
     
     //ofxgui
     ofxPanel gui;
-    ofxFloatSlider operateMinValue;
-    ofxFloatSlider operateMaxValue;
+    ofxFloatSlider operateMinValueA0;
+    ofxFloatSlider operateMaxValueA0;
+    ofxFloatSlider operateMinValueA1;
+    ofxFloatSlider operateMaxValueA1;
     
     //plot
     ofxHistoryPlot * plot;
@@ -69,8 +71,8 @@ public:
     float height = ofGetHeight()/2;
     ofTrueTypeFont      font;
     ofTrueTypeFont      smallFont;
-    float valueRow[3] = {20, 20 + width * 2/3, 20 + width * 4/3};
-    float valueCol[3] = {100, 100 * 2, 100 * 3};
+    float valueRow[3] = {20, 20 + width * 2/3, width * 4/3 - 50};
+    float valueCol[3] = {30, 60 * 2 + 30, 60 * 3 + 30};
     void drawLog();
     
 private:
