@@ -7,7 +7,8 @@ void ofApp::setup(){
     smallFont.load("franklinGothic.otf", 10);
     initArduino();
     gui.setup();
-    gui.add(operateMinValue.setup("minValue",200, 0, 1000));
+    gui.add(operateMinValue.setup("minValue",200, 0, 1023));
+    gui.add(operateMaxValue.setup("MaxValue",400, 0, 1023));
     setupHistoryPlot();
 }
 
@@ -180,10 +181,10 @@ void ofApp::keyPressed(int key){
             ofToggleFullscreen();
             break;
         case 'c':
-            minValue[0] = operateMinValue;
-            maxValue[0] = 10;
+            minValue[0] = 0;
+            maxValue[0] = 1024;
             minValue[1] = operateMinValue;
-            maxValue[1] = 10;
+            maxValue[1] = operateMaxValue;
             break;
         case 'k':
             milliSeconds = 0;
