@@ -75,6 +75,15 @@ public:
     float valueCol[3] = {30, 60 * 2 + 30, 60 * 3 + 30};
     void drawLog();
     
+    //test
+    bool pompTest13 = false;
+    bool pompTest12 = false;
+    bool valveTest3 = false;
+    bool valveTest4 = false;
+    bool valveTest5 = false;
+    bool valveTest6 = false;
+    
+    
 private:
     //arduino
     ofArduino ard;
