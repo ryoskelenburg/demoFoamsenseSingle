@@ -83,13 +83,52 @@ void ofApp::draw(){
     }
     //***----***
     
-//    if (rawInputValue > 500) {
-//        ard.sendDigital(12, ARD_HIGH);
-//        //sendDigitalArduino02();
-//    } else {
-//        ard.sendDigital(12, ARD_LOW);
-//        //sendDigitalArduino03();
-//    }
+    
+    if (pompTest13) {
+        ard.sendDigital(13, ARD_HIGH);
+    } else {
+        ard.sendDigital(13, ARD_LOW);
+    }
+    
+    if (pompTest12) {
+        //ard.sendDigital(12, ARD_HIGH);
+        //sendDigitalArduinoInflation();
+    } else {
+        //ard.sendDigital(12, ARD_LOW);
+        //sendDigitalArduinoMaintain();
+    }
+    
+    if (valveTest3) {
+        ard.sendDigital(3, ARD_HIGH);
+    } else {
+        ard.sendDigital(3, ARD_LOW);
+    }
+    
+    if (valveTest4) {
+        ard.sendDigital(4, ARD_HIGH);
+    } else {
+        ard.sendDigital(4, ARD_LOW);
+    }
+    
+    if (valveTest5) {
+        ard.sendDigital(5, ARD_HIGH);
+    } else {
+        ard.sendDigital(5, ARD_LOW);
+    }
+    
+    if (valveTest6) {
+        ard.sendDigital(6, ARD_HIGH);
+    } else {
+        ard.sendDigital(6, ARD_LOW);
+    }
+    
+    //    if (operateMinValueA0 ==  0) {
+    //        ard.sendDigital(13, ARD_HIGH);
+    //        //sendDigitalArduino02();
+    //    } else {
+    //        ard.sendDigital(13, ARD_LOW);
+    //        //sendDigitalArduino03();
+    //    }
     
     drawLog();
     gui.draw();
@@ -115,8 +154,8 @@ void ofApp::controlPomp(int input, int output){
 }
 
 void ofApp::startDeform(int level){
-//    bDeform = true;
-//    startTime = ofGetElapsedTimeMillis();
+    //    bDeform = true;
+    //    startTime = ofGetElapsedTimeMillis();
 }
 
 void ofApp::actuate(){
@@ -183,15 +222,33 @@ void ofApp::keyPressed(int key){
             ofToggleFullscreen();
             break;
         case 'c':
-//            minValue[0] = 0;
-//            maxValue[0] = 1024;
+            //            minValue[0] = 0;
+            //            maxValue[0] = 1024;
             minValue[0] = operateMinValueA0;
             maxValue[0] = operateMaxValueA0;
             minValue[1] = operateMinValueA1;
             maxValue[1] = operateMaxValueA1;
             break;
-        case 'k':
+        case 'v':
             milliSeconds = 0;
+            break;
+        case 'p':
+            pompTest13 = true;
+            break;
+        case 'l':
+            pompTest12 = true;
+            break;
+        case 'g':
+            valveTest3 = true;
+            break;
+        case 'h':
+            valveTest4 = true;
+            break;
+        case 'j':
+            valveTest5 = true;
+            break;
+        case 'k':
+            valveTest6 = true;
             break;
         default:
             break;
@@ -200,6 +257,28 @@ void ofApp::keyPressed(int key){
 
 
 void ofApp::keyReleased(int key){
+    switch (key) {
+        case 'p':
+            pompTest13 = false;
+            break;
+        case 'l':
+            pompTest12 = false;
+            break;
+        case 'g':
+            valveTest3 = false;
+            break;
+        case 'h':
+            valveTest4 = false;
+            break;
+        case 'j':
+            valveTest5 = false;
+            break;
+        case 'k':
+            valveTest6 = false;
+            break;
+        default:
+            break;
+    }
 }
 void ofApp::mouseMoved(int x, int y ){
 }
@@ -247,7 +326,7 @@ void ofApp::setupArduino(const int & version) {
     ard.sendDigitalPinMode(5, ARD_OUTPUT);
     ard.sendDigitalPinMode(6, ARD_OUTPUT);
     ard.sendDigitalPinMode(12, ARD_OUTPUT);
-    ard.sendDigitalPinMode(18, ARD_OUTPUT);
+    ard.sendDigitalPinMode(13, ARD_OUTPUT);
     
     ard.sendDigitalPinMode(11, ARD_PWM);
     
