@@ -83,12 +83,18 @@ public:
     bool valveTest5 = false;
     bool valveTest6 = false;
     
+    //record
     static const int RECORD_NUM = 300;
     int recordAnalog[RECORD_NUM];
     int count = 0;
     bool bRecord = false;
     void record();
     void countClear();
+    
+    //play
+    int playCount = 0;
+    bool bPlay = false;
+    void play();
     
 private:
     ofArduino ard; //arduino

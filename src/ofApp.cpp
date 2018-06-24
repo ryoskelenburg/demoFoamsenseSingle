@@ -61,7 +61,7 @@ void ofApp::update(){
     }
     
     if (bRecord == true) {
-        if(count >= RECORD_NUM){
+        if(count > RECORD_NUM){
             bRecord = false;
             countClear();
         } else {
@@ -69,6 +69,20 @@ void ofApp::update(){
         }
     }
     count++;
+    
+    if (bPlay == true) {
+        if (playCount > RECORD_NUM) {
+            bPlay = false;
+            countClear();
+        } else {
+            if(recordAnalog[playCount]> 200){
+                ard.sendDigital(ledPin, ARD_HIGH);
+            } else {
+                ard.sendDigital(ledPin, ARD_LOW);
+            }
+        }
+        playCount++;
+    }
 }
 
 //void ofApp::checktime(){
@@ -174,9 +188,13 @@ void ofApp::drawLog(){
     smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow[2], valueCol[1] + 60);
     smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[2], valueCol[1] + 80);
     smallFont.drawString("count : " + ofToString(count) , valueRow[2], valueCol[1] + 150);
+    smallFont.drawString("playCount : " + ofToString(playCount) , valueRow[2], valueCol[1] + 165);
     smallFont.drawString("recordAnalog[0] : " + ofToString(recordAnalog[0]) , valueRow[2], valueCol[1] + 180);
-    smallFont.drawString("recordAnalog[1] : " + ofToString(recordAnalog[1]) , valueRow[2], valueCol[1] + 200);
-    smallFont.drawString("recordAnalog[LAST] : " + ofToString(recordAnalog[RECORD_NUM - 1]) , valueRow[2], valueCol[1] + 220);
+    smallFont.drawString("recordAnalog[1] : " + ofToString(recordAnalog[1]) , valueRow[2], valueCol[1] + 190);
+    smallFont.drawString("recordAnalog[LAST] : " + ofToString(recordAnalog[RECORD_NUM - 1]) , valueRow[2], valueCol[1] + 200);
+    
+    smallFont.drawString("bool bRecord: " + ofToString(bRecord) , valueRow[2], valueCol[1] + 220);
+    smallFont.drawString("bool bPlay: " + ofToString(bPlay) , valueRow[2], valueCol[1] + 240);
     
     smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[0], valueCol[1] + 30);
     smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
@@ -193,8 +211,6 @@ void ofApp::keyPressed(int key){
             ofToggleFullscreen();
             break;
         case 'c':
-            //            minValue[0] = 0;
-            //            maxValue[0] = 1024;
             minValue[0] = operateMinValueA0;
             maxValue[0] = operateMaxValueA0;
             minValue[1] = operateMinValueA1;
@@ -203,27 +219,12 @@ void ofApp::keyPressed(int key){
         case 'v':
             milliSeconds = 0;
             break;
-        case 'p':
-            pompTest13 = true;
-            break;
-        case 'l':
-            pompTest12 = true;
-            break;
-        case 'g':
-            valveTest3 = true;
-            break;
-        case 'h':
-            valveTest4 = true;
-            break;
-        case 'j':
-            valveTest5 = true;
-            break;
-        case 'k':
-            valveTest6 = true;
-            break;
         case 's':
             bRecord = true;
             countClear();
+            break;
+        case 'r':
+            bPlay = true;
             break;
         default:
             break;
@@ -234,8 +235,13 @@ void ofApp::record(){
     recordAnalog[count] = filterInputValue[0];
 }
 
+void ofApp::play(){
+    
+}
+
 void ofApp::countClear(){
     count = 0;
+    playCount = 0;
 }
 
 void ofApp::keyReleased(int key){
@@ -310,7 +316,8 @@ void ofApp::setupArduino(const int & version) {
     ard.sendDigitalPinMode(12, ARD_OUTPUT);
     ard.sendDigitalPinMode(pumpPin, ARD_OUTPUT);
     
-    ard.sendDigitalPinMode(ledPin, ARD_PWM);
+    ard.sendDigitalPinMode(ledPin, ARD_OUTPUT);
+    //ard.sendDigitalPinMode(ledPin, ARD_PWM);
     
     // attach a servo to pin D9
     // servo motors can only be attached to pin D3, D5, D6, D9, D10, or D11
