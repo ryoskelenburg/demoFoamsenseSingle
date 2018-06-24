@@ -7,10 +7,10 @@ void ofApp::setup(){
     smallFont.load("franklinGothic.otf", 10);
     initArduino();
     gui.setup();
-    gui.add(operateMinValueA0.setup("minValue: A0",300, 0, 1023));
-    gui.add(operateMaxValueA0.setup("MaxValue: A0",500, 0, 1023));
-    gui.add(operateMinValueA1.setup("minValue: A1",200, 0, 1023));
-    gui.add(operateMaxValueA1.setup("MaxValue: A1",400, 0, 1023));
+    gui.add(operateMinValueA0.setup("minValue: A0",10, 0, 1023));
+    gui.add(operateMaxValueA0.setup("MaxValue: A0",200, 0, 1023));
+    gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
+    gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
     setupHistoryPlot();
 }
 
@@ -55,7 +55,7 @@ void ofApp::update(){
 }
 
 void ofApp::checktime(){
-    if(ofGetElapsedTimeMillis() - startTime < 71 * delta) {
+    if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
         bDeform = true;
     } else {
         bDeform = false;
@@ -84,43 +84,43 @@ void ofApp::draw(){
     //***----***
     
     
-    if (pompTest13) {
-        ard.sendDigital(13, ARD_HIGH);
-    } else {
-        ard.sendDigital(13, ARD_LOW);
-    }
+//    if (pompTest13) {
+//        ard.sendDigital(13, ARD_HIGH);
+//    } else {
+//        ard.sendDigital(13, ARD_LOW);
+//    }
+//
+//    if (pompTest12) {
+//        //ard.sendDigital(12, ARD_HIGH);
+//        //sendDigitalArduinoInflation();
+//    } else {
+//        //ard.sendDigital(12, ARD_LOW);
+//        //sendDigitalArduinoMaintain();
+//    }
     
-    if (pompTest12) {
-        //ard.sendDigital(12, ARD_HIGH);
-        //sendDigitalArduinoInflation();
-    } else {
-        //ard.sendDigital(12, ARD_LOW);
-        //sendDigitalArduinoMaintain();
-    }
-    
-    if (valveTest3) {
-        ard.sendDigital(3, ARD_HIGH);
-    } else {
-        ard.sendDigital(3, ARD_LOW);
-    }
-    
-    if (valveTest4) {
-        ard.sendDigital(4, ARD_HIGH);
-    } else {
-        ard.sendDigital(4, ARD_LOW);
-    }
-    
-    if (valveTest5) {
-        ard.sendDigital(5, ARD_HIGH);
-    } else {
-        ard.sendDigital(5, ARD_LOW);
-    }
-    
-    if (valveTest6) {
-        ard.sendDigital(6, ARD_HIGH);
-    } else {
-        ard.sendDigital(6, ARD_LOW);
-    }
+//    if (valveTest3) {
+//        ard.sendDigital(3, ARD_HIGH);
+//    } else {
+//        ard.sendDigital(3, ARD_LOW);
+//    }
+//
+//    if (valveTest4) {
+//        ard.sendDigital(4, ARD_HIGH);
+//    } else {
+//        ard.sendDigital(4, ARD_LOW);
+//    }
+//
+//    if (valveTest5) {
+//        ard.sendDigital(5, ARD_HIGH);
+//    } else {
+//        ard.sendDigital(5, ARD_LOW);
+//    }
+//
+//    if (valveTest6) {
+//        ard.sendDigital(6, ARD_HIGH);
+//    } else {
+//        ard.sendDigital(6, ARD_LOW);
+//    }
     
     //    if (operateMinValueA0 ==  0) {
     //        ard.sendDigital(13, ARD_HIGH);
@@ -146,7 +146,7 @@ void ofApp::controlPomp(int input, int output){
         bPolarity = false;
     }
     delta = abs(input - output);
-    if(delta > 2) {
+    if(delta > 1) {
         //startDeform(delta);
         bDeform = true;
         startTime = ofGetElapsedTimeMillis();
