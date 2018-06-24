@@ -6,29 +6,33 @@ void ofApp::setup(){
     font.load("franklinGothic.otf", 16);
     smallFont.load("franklinGothic.otf", 10);
     initArduino();
-    gui.setup();
+    
+    gui.setup(); //ofxGui
     gui.add(operateMinValueA0.setup("minValue: A0",10, 0, 1023));
     gui.add(operateMaxValueA0.setup("MaxValue: A0",200, 0, 1023));
     gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
     gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
-    setupHistoryPlot();
+    
+    setupHistoryPlot(); //ofxHistoryPlot
+
 }
 
 void ofApp::update(){
     currentFrameRate = ofGetFrameRate();
     updateArduino();
     
-    rawInputValue = ard.getAnalog(0);
-    //mapInputValue = ofMap(rawInputValue, 0, 1023, 100, 500);
+    rawInputValue = ard.getAnalog(elastPin01); //input from Arduino
     rawOutputValue = ard.getAnalog(1);
-    filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
+    filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue; //filtering
     filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
+    
     propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, 20);
     propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 20);
+    
     currentVolume[0] = ofMap(propotionVolume[0], 0, 20, -30, 60);
     currentVolume[1] = ofMap(propotionVolume[1], 0, 20, -30, 60);
     
-    if(filterInputValue[1] > maxValue[0]){
+    if(filterInputValue[1] > maxValue[0]){ //setting maxvalue & minvalue
         maxValue[0] = filterInputValue[1];
     }
     if(filterInputValue[1] < minValue[0]){
@@ -45,90 +49,51 @@ void ofApp::update(){
     plot2->update(currentVolume[1]);
     
     milliSeconds = ofGetElapsedTimeMillis();
-    //--
+    
     //"change false"
     //if true, change false after elapased time * delta.
-    if(bDeform) {
-        checktime();
+    if(bDeform == true) {
+        if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
+            bDeform = true;
+        } else {
+            bDeform = false;
+        }
     }
-    //--
+    
+    if (bRecord == true) {
+        if(count >= RECORD_NUM){
+            bRecord = false;
+            countClear();
+        } else {
+            recordAnalog[count - 1] = filterInputValue[0];
+        }
+    }
+    count++;
 }
 
-void ofApp::checktime(){
-    if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
-        bDeform = true;
-    } else {
-        bDeform = false;
-    }
-}
+//void ofApp::checktime(){
+//
+//}
 
 void ofApp::draw(){
-    //--
+    
     //"change true"
     //compare input and output value, if delta > value, change true and timer starting.
     controlPomp(propotionVolume[0], propotionVolume[1]);
-    //--
     
-    //***--write your control method--***
-    if(bDeform) {
-        ard.sendDigital(13, ARD_HIGH);
-        if(bPolarity){
+    //***--maser method--***
+    if(bDeform == true) {
+        //ard.sendDigital(pumpPin, ARD_HIGH);
+        if(bPolarity == true){
             sendDigitalArduinoInflation();
         }else{
             sendDigitalArduinoDeflation();
         }
     } else {
-        ard.sendDigital(13, ARD_LOW);
+        //ard.sendDigital(pumpPin, ARD_LOW);
         sendDigitalArduinoMaintain();
     }
     //***----***
-    
-    
-//    if (pompTest13) {
-//        ard.sendDigital(13, ARD_HIGH);
-//    } else {
-//        ard.sendDigital(13, ARD_LOW);
-//    }
-//
-//    if (pompTest12) {
-//        //ard.sendDigital(12, ARD_HIGH);
-//        //sendDigitalArduinoInflation();
-//    } else {
-//        //ard.sendDigital(12, ARD_LOW);
-//        //sendDigitalArduinoMaintain();
-//    }
-    
-//    if (valveTest3) {
-//        ard.sendDigital(3, ARD_HIGH);
-//    } else {
-//        ard.sendDigital(3, ARD_LOW);
-//    }
-//
-//    if (valveTest4) {
-//        ard.sendDigital(4, ARD_HIGH);
-//    } else {
-//        ard.sendDigital(4, ARD_LOW);
-//    }
-//
-//    if (valveTest5) {
-//        ard.sendDigital(5, ARD_HIGH);
-//    } else {
-//        ard.sendDigital(5, ARD_LOW);
-//    }
-//
-//    if (valveTest6) {
-//        ard.sendDigital(6, ARD_HIGH);
-//    } else {
-//        ard.sendDigital(6, ARD_LOW);
-//    }
-    
-    //    if (operateMinValueA0 ==  0) {
-    //        ard.sendDigital(13, ARD_HIGH);
-    //        //sendDigitalArduino02();
-    //    } else {
-    //        ard.sendDigital(13, ARD_LOW);
-    //        //sendDigitalArduino03();
-    //    }
     
     drawLog();
     gui.draw();
@@ -145,7 +110,9 @@ void ofApp::controlPomp(int input, int output){
     } else if ((input - output) < 0){
         bPolarity = false;
     }
+    
     delta = abs(input - output);
+    
     if(delta > 1) {
         //startDeform(delta);
         bDeform = true;
@@ -159,32 +126,32 @@ void ofApp::startDeform(int level){
 }
 
 void ofApp::actuate(){
-    //ard.sendDigital(13, ARD_HIGH);
+    //ard.sendDigital(pumpPin, ARD_HIGH);
 }
 
 void ofApp::stopActuate(){
-    //ard.sendDigital(13, ARD_LOW);
+    //ard.sendDigital(pumpPin, ARD_LOW);
 }
 
 void ofApp::sendDigitalArduinoDeflation(){
-    ard.sendDigital(3, ARD_LOW);
-    ard.sendDigital(4, ARD_HIGH);
-    ard.sendDigital(5, ARD_HIGH);
-    ard.sendDigital(6, ARD_LOW);
+    //    ard.sendDigital(3, ARD_LOW);
+    //    ard.sendDigital(4, ARD_HIGH);
+    //    ard.sendDigital(5, ARD_HIGH);
+    //    ard.sendDigital(6, ARD_LOW);
 }
 
 void ofApp::sendDigitalArduinoInflation(){
-    ard.sendDigital(3, ARD_HIGH);
-    ard.sendDigital(4, ARD_LOW);
-    ard.sendDigital(5, ARD_LOW);
-    ard.sendDigital(6, ARD_HIGH);
+    //    ard.sendDigital(3, ARD_HIGH);
+    //    ard.sendDigital(4, ARD_LOW);
+    //    ard.sendDigital(5, ARD_LOW);
+    //    ard.sendDigital(6, ARD_HIGH);
 }
 
 void ofApp::sendDigitalArduinoMaintain(){
-    ard.sendDigital(3, ARD_LOW);
-    ard.sendDigital(4, ARD_LOW);
-    ard.sendDigital(5, ARD_HIGH);
-    ard.sendDigital(6, ARD_HIGH);
+    //    ard.sendDigital(3, ARD_LOW);
+    //    ard.sendDigital(4, ARD_LOW);
+    //    ard.sendDigital(5, ARD_HIGH);
+    //    ard.sendDigital(6, ARD_HIGH);
 }
 
 void ofApp::drawLog(){
@@ -206,6 +173,10 @@ void ofApp::drawLog(){
     smallFont.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), valueRow[2], valueCol[1] + 40);
     smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow[2], valueCol[1] + 60);
     smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[2], valueCol[1] + 80);
+    smallFont.drawString("count : " + ofToString(count) , valueRow[2], valueCol[1] + 150);
+    smallFont.drawString("recordAnalog[0] : " + ofToString(recordAnalog[0]) , valueRow[2], valueCol[1] + 180);
+    smallFont.drawString("recordAnalog[1] : " + ofToString(recordAnalog[1]) , valueRow[2], valueCol[1] + 200);
+    smallFont.drawString("recordAnalog[LAST] : " + ofToString(recordAnalog[RECORD_NUM - 1]) , valueRow[2], valueCol[1] + 220);
     
     smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[0], valueCol[1] + 30);
     smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
@@ -250,11 +221,22 @@ void ofApp::keyPressed(int key){
         case 'k':
             valveTest6 = true;
             break;
+        case 's':
+            bRecord = true;
+            countClear();
+            break;
         default:
             break;
     }
 }
 
+void ofApp::record(){
+    recordAnalog[count] = filterInputValue[0];
+}
+
+void ofApp::countClear(){
+    count = 0;
+}
 
 void ofApp::keyReleased(int key){
     switch (key) {
@@ -300,7 +282,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 }
 
 void ofApp::initArduino(){
-    ard.connect("/dev/cu.usbmodem1421", 57600);
+    ard.connect("/dev/cu.usbmodem1411", 57600);
     
     ofAddListener(ard.EInitialized, this, &ofApp::setupArduino);
     bSetupArduino    = false;
@@ -321,14 +303,14 @@ void ofApp::setupArduino(const int & version) {
     ard.sendAnalogPinReporting(0, ARD_ANALOG);
     ard.sendAnalogPinReporting(1, ARD_ANALOG);
     
+    ard.sendAnalogPinReporting(elastPin01, ARD_ANALOG);
     ard.sendDigitalPinMode(3, ARD_OUTPUT);
-    ard.sendDigitalPinMode(4, ARD_OUTPUT);
     ard.sendDigitalPinMode(5, ARD_OUTPUT);
     ard.sendDigitalPinMode(6, ARD_OUTPUT);
     ard.sendDigitalPinMode(12, ARD_OUTPUT);
-    ard.sendDigitalPinMode(13, ARD_OUTPUT);
+    ard.sendDigitalPinMode(pumpPin, ARD_OUTPUT);
     
-    ard.sendDigitalPinMode(11, ARD_PWM);
+    ard.sendDigitalPinMode(ledPin, ARD_PWM);
     
     // attach a servo to pin D9
     // servo motors can only be attached to pin D3, D5, D6, D9, D10, or D11
@@ -340,9 +322,9 @@ void ofApp::setupArduino(const int & version) {
 
 void ofApp::updateArduino(){
     ard.update();
-    if (bSetupArduino) {
-        ard.sendPwm(11, (int)(128 + 128 * sin(ofGetElapsedTimef())));   // pwm...
-    }
+    //    if (bSetupArduino) {
+    //        ard.sendPwm(11, (int)(128 + 128 * sin(ofGetElapsedTimef())));   // pwm...
+    //    }
 }
 
 void ofApp::digitalPinChanged(const int & pinNum) {

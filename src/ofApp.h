@@ -32,9 +32,9 @@ public:
     
     //output
     bool bDeform = false;
-    int delta;
+    int delta = 0;
     bool bPolarity = false;
-    int startTime;
+    int startTime = 0;
     float milliSeconds = 0;
     
     void startDeform(int level);
@@ -83,10 +83,15 @@ public:
     bool valveTest5 = false;
     bool valveTest6 = false;
     
+    static const int RECORD_NUM = 300;
+    int recordAnalog[RECORD_NUM];
+    int count = 0;
+    bool bRecord = false;
+    void record();
+    void countClear();
     
 private:
-    //arduino
-    ofArduino ard;
+    ofArduino ard; //arduino
     bool bSetupArduino;
     
     void initArduino();
@@ -99,4 +104,8 @@ private:
     string potValue;
     
     double ceil2(double dIn, int nLen);
+    
+    int ledPin = 7;
+    int pumpPin = 11;
+    int elastPin01 = 4;
 };
