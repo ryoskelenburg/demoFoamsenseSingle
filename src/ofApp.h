@@ -33,24 +33,24 @@ public:
     //output
     bool bDeform = false;
     int delta = 0;
+    int absDelta = 0;
     bool bPolarity = false;
     int startTime = 0;
     float milliSeconds = 0;
     
-    void startDeform(int level);
     void actuate();
     void stopActuate();
     void checktime();
-    void controlPomp(int x, int y);
+    void checkDelta(int x, int y);
     void sendDigitalArduinoDeflation();
     void sendDigitalArduinoInflation();
     void sendDigitalArduinoMaintain();
     
-    //0:Input, 1:Output
-    int currentVolume[2] = {0};
-    int propotionVolume[2] = {0};
-    int minValue[2] = {0};
-    int maxValue[2] = {0};
+    static const int ANALOG_NUM = 2;
+    int currentVolume[ANALOG_NUM] = {0};
+    int propotionVolume[ANALOG_NUM] = {0};
+    int minValue[ANALOG_NUM] = {0};
+    int maxValue[ANALOG_NUM] = {0};
     int manipulateInput, manipulateOutput;
     
     //ofxgui
@@ -111,7 +111,9 @@ private:
     
     double ceil2(double dIn, int nLen);
     
-    int ledPin = 7;
+    int ledPin = 9;
     int pumpPin = 11;
     int elastPin01 = 4;
+    int elastPin02 = 5;
+    int valvePin[8] = {2,3,4,5,6,7,8,9};
 };
