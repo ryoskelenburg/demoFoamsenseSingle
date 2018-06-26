@@ -8,8 +8,8 @@ void ofApp::setup(){
     initArduino();
     
     gui.setup(); //ofxGui
-    gui.add(operateMinValueA0.setup("minValue: A0",10, 0, 1023));
-    gui.add(operateMaxValueA0.setup("MaxValue: A0",200, 0, 1023));
+    gui.add(operateMinValueA0.setup("minValue: A0",100, 0, 1023));
+    gui.add(operateMaxValueA0.setup("MaxValue: A0",700, 0, 1023));
     gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
     gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
     
@@ -21,16 +21,11 @@ void ofApp::update(){
     currentFrameRate = ofGetFrameRate();
     updateArduino();
     
-    rawInputValue = ard.getAnalog(elastPin01); //input from Arduino
-    //rawOutputValue = ard.getAnalog(elastPin02);
-    filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue; //filtering
-    //filterOutputValue[1] = a * filterOutputValue[0] + (1-a) * rawOutputValue;
+    rawInputValue = ard.getAnalog(elastPin01);
+    filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     
-    propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, 20);
+    propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, DEFORM_RESOLUSION);
     //propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 20);
-    
-    currentVolume[0] = ofMap(propotionVolume[0], 0, 20, -30, 60);
-    currentVolume[1] = ofMap(propotionVolume[1], 0, 20, -30, 60);
     
     if(filterInputValue[1] > maxValue[0]){
         maxValue[0] = filterInputValue[1];
@@ -45,34 +40,41 @@ void ofApp::update(){
 //        minValue[1] = filterOutputValue[1];
 //    }
     
-    plot->update(currentVolume[0]);
+    plot->update(propotionVolume[0]);
     //plot2->update(currentVolume[1]);
+    plot3->update(recordAnalog[count]);
     
     milliSeconds = ofGetElapsedTimeMillis();
     
     //-------------------
     
     if (bRecord == true) {
-        if(count > RECORD_NUM){
+        if(count >= RECORD_NUM){ //200
             bRecord = false;
             countClear();
         } else {
-            record();
+            record(); //~199
+            ard.sendDigital(ledPin, ARD_LOW);
         }
+        count++;
     }
-    count++;
+    
     
     //--------------------
     
     if (bPlay == true) {
-        if (playCount > RECORD_NUM) {
+        if (playCount >= RECORD_NUM) {
             bPlay = false;
             countClear();
         } else {
+            ard.sendDigital(ledPin, ARD_HIGH);
             //play();
         }
+        //play();
+        count++;
         playCount++;
     }
+    
     
     //-------------------
 }
@@ -82,14 +84,54 @@ void ofApp::draw(){
     gui.draw();
     
     plot->draw(0, 400, ofGetWidth(), 400);
-    plot2->draw(0, 400, ofGetWidth(), 400);
+    //plot2->draw(0, 400, ofGetWidth(), 400);
+    if (bDrawPlot == true) {
+        if (playCount >= RECORD_NUM) {
+            bDrawPlot = false;
+        } else {
+            plot3->draw(0,400, ofGetWidth(), 400);
+        }
+    }
+    
     filterInputValue[0] = filterInputValue[1];
     filterOutputValue[0] = filterOutputValue[1];
+    
+    //count++;
+    //playCount++;
 }
 
-void ofApp::checkDelta(int input, int output){
-    delta = input - output;
-    absDelta = abs(input - output);
+void ofApp::record(){
+    recordAnalog[count] = propotionVolume[0];
+}
+
+void ofApp::play(){
+    checkDelta(recordAnalog[count], recordAnalog[count-1]);
+    //actuate();
+    //stopActuate();
+    
+    if(bDeform == true) {
+        if(bPolarity == true){
+            ard.sendDigital(ledPin, ARD_HIGH);
+            //sendDigitalArduinoInflation();
+        }else{
+            ard.sendDigital(ledPin, ARD_LOW);
+            //sendDigitalArduinoDeflation();
+        }
+    }
+    //    else {
+    //        //ard.sendDigital(pumpPin02, ARD_LOW);
+    //        //sendDigitalArduinoMaintain();
+    //    }
+}
+
+void ofApp::countClear(){
+    count = 0;
+    playCount = 0;
+}
+
+void ofApp::checkDelta(int value, int oldValue){
+    delta = value - oldValue;
+    absDelta = abs(delta);
     
     if (delta > 0) {
         bPolarity = true;
@@ -98,24 +140,13 @@ void ofApp::checkDelta(int input, int output){
     }
     
     if(absDelta > 1) {
-        //startDeform(delta);
         bDeform = true;
         startTime = ofGetElapsedTimeMillis();
     }
 }
 
 void ofApp::actuate(){
-    if(bDeform == true) {
-        ard.sendDigital(pumpPin, ARD_HIGH);
-        if(bPolarity == true){
-            sendDigitalArduinoInflation();
-        }else{
-            sendDigitalArduinoDeflation();
-        }
-    } else {
-        ard.sendDigital(pumpPin, ARD_LOW);
-        sendDigitalArduinoMaintain();
-    }
+
 }
 
 void ofApp::stopActuate(){
@@ -129,17 +160,13 @@ void ofApp::stopActuate(){
 }
 
 void ofApp::sendDigitalArduinoDeflation(){
-    //    ard.sendDigital(3, ARD_LOW);
-    //    ard.sendDigital(4, ARD_HIGH);
-    //    ard.sendDigital(5, ARD_HIGH);
-    //    ard.sendDigital(6, ARD_LOW);
+    ard.sendDigital(pumpPin01, ARD_HIGH);
+    ard.sendDigital(valvePin[0], ARD_LOW);
 }
 
 void ofApp::sendDigitalArduinoInflation(){
-    //    ard.sendDigital(3, ARD_HIGH);
-    //    ard.sendDigital(4, ARD_LOW);
-    //    ard.sendDigital(5, ARD_LOW);
-    //    ard.sendDigital(6, ARD_HIGH);
+    ard.sendDigital(pumpPin02, ARD_HIGH);
+    ard.sendDigital(valvePin[0], ARD_HIGH);
 }
 
 void ofApp::sendDigitalArduinoMaintain(){
@@ -177,6 +204,7 @@ void ofApp::drawLog(){
     
     smallFont.drawString("bool bRecord: " + ofToString(bRecord) , valueRow[1], valueCol[0] + 120);
     smallFont.drawString("bool bPlay: " + ofToString(bPlay) , valueRow[1], valueCol[0] + 140);
+    smallFont.drawString("bool bDeform: " + ofToString(bDeform) , valueRow[1], valueCol[0] + 160);
     
     smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[0], valueCol[1] + 30);
     smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
@@ -184,22 +212,8 @@ void ofApp::drawLog(){
     ofSetColor(255, 0, 0);
     smallFont.drawString("--------- OUTPUT", valueRow[0], valueCol[1] + 100);
     
-    //    std::cout << "raw: " << rawInputValue << ", oldValue: " << filterInputValue[0] << ", newValue: " << filterInputValue[1] << endl;
-}
-
-void ofApp::record(){
-    recordAnalog[count - 1] = propotionVolume[0];
-}
-
-void ofApp::play(){
-    checkDelta(recordAnalog[count - 1], recordAnalog[count]);
-    actuate();
-    stopActuate();
-}
-
-void ofApp::countClear(){
-    count = 0;
-    playCount = 0;
+    std::cout << "current[" << count << "]: " << recordAnalog[count] << endl;
+    std::cout << "recordAnalog[" << count-1 << "]: " << recordAnalog[count-1] << endl;
 }
 
 void ofApp::keyPressed(int key){
@@ -217,11 +231,13 @@ void ofApp::keyPressed(int key){
             milliSeconds = 0;
             break;
         case 's':
-            countClear();
             bRecord = true;
+            countClear();
             break;
         case 'r':
             bPlay = true;
+            plot3->reset();
+            bDrawPlot = true;
             break;
         default:
             break;
@@ -285,11 +301,12 @@ void ofApp::setupArduino(const int & version) {
     ard.sendDigitalPinMode(valvePin[4], ARD_OUTPUT); //D6
     ard.sendDigitalPinMode(valvePin[5], ARD_OUTPUT); //D7
     ard.sendDigitalPinMode(valvePin[6], ARD_OUTPUT); //D8
-    ard.sendDigitalPinMode(valvePin[7], ARD_OUTPUT); //D9
+    ard.sendDigitalPinMode(ledPin, ARD_OUTPUT); //D9
     
-    ard.sendDigitalPinMode(pumpPin, ARD_OUTPUT); //D11
+    ard.sendDigitalPinMode(pumpPin01, ARD_OUTPUT); //D11
+    ard.sendDigitalPinMode(pumpPin02, ARD_OUTPUT); //D12
     
-    ard.sendServoAttach(9);
+    //ard.sendServoAttach(9);
     //ard.sendDigitalPinMode(ledPin, ARD_OUTPUT);
     //ard.sendDigitalPinMode(ledPin, ARD_PWM);
     
@@ -321,7 +338,7 @@ void ofApp::setupHistoryPlot(){
     plot->setBackgroundColor(ofColor(0,0,0,0));
     plot->setColor( ofColor(255,255,255) );
     //plot->setShowNumericalInfo(true);
-    plot->setRange(-100, 100);//definable range of plot
+    plot->setRange(-DEFORM_RESOLUSION - 10, DEFORM_RESOLUSION + 10);//definable range of plot
     plot->setRespectBorders(false);
     plot->setLineWidth(1);
     plot->setCropToRect(false);
@@ -342,6 +359,18 @@ void ofApp::setupHistoryPlot(){
     plot2->setGridUnit(16);
     plot2->setShowSmoothedCurve(false);
     plot2->setSmoothFilter(0.1); //smooth filter strength
+    
+    plot3 = new ofxHistoryPlot(&currentFrameRate, "recordValue", ofGetWidth(), false);
+    plot3->setBackgroundColor(ofColor(0,0,0,0));
+    plot3->setColor( ofColor(255,0,0) );
+    plot3->setRange(-DEFORM_RESOLUSION - 10, DEFORM_RESOLUSION + 10);//definable range of plot
+    plot3->setRespectBorders(false);
+    plot3->setLineWidth(1);
+    plot3->setCropToRect(false);
+    plot3->setDrawGrid(false);
+    plot3->setGridUnit(16);
+    plot3->setShowSmoothedCurve(false);
+    plot3->setSmoothFilter(0.1); //smooth filter strength
 }
 
 double ofApp::ceil2(double dIn, int nLen){
