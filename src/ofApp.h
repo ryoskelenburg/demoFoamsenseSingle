@@ -53,6 +53,8 @@ public:
     int maxValue[ANALOG_NUM] = {0};
     int manipulateInput, manipulateOutput;
     
+    static const int DEFORM_RESOLUSION = 8;
+    
     //ofxgui
     ofxPanel gui;
     ofxFloatSlider operateMinValueA0;
@@ -63,8 +65,10 @@ public:
     //plot
     ofxHistoryPlot * plot;
     ofxHistoryPlot * plot2;
+    ofxHistoryPlot * plot3;
     void setupHistoryPlot();
     float currentFrameRate;
+    bool bDrawPlot = false;
 
     //graphic
     float width = ofGetWidth()/2;
@@ -84,8 +88,8 @@ public:
     bool valveTest6 = false;
     
     //record
-    static const int RECORD_NUM = 300;
-    int recordAnalog[RECORD_NUM];
+    static const int RECORD_NUM = 200;
+    int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
     bool bRecord = false;
     void record();
@@ -112,7 +116,8 @@ private:
     double ceil2(double dIn, int nLen);
     
     int ledPin = 9;
-    int pumpPin = 11;
+    int pumpPin01 = 10;
+    int pumpPin02 = 11;
     int elastPin01 = 4;
     int elastPin02 = 5;
     int valvePin[8] = {2,3,4,5,6,7,8,9};
