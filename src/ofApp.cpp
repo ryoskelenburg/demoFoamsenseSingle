@@ -14,10 +14,12 @@ void ofApp::setup(){
     gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
     
     setupHistoryPlot(); //ofxHistoryPlot
-
+    
 }
 
 void ofApp::update(){
+    //ard.sendDigital(valvePin[7], ARD_HIGH);
+    
     currentFrameRate = ofGetFrameRate();
     updateArduino();
     
@@ -33,12 +35,12 @@ void ofApp::update(){
     if(filterInputValue[1] < minValue[0]){
         minValue[0] = filterInputValue[1];
     }
-//    if(filterOutputValue[1] > maxValue[1]){
-//        maxValue[1] = filterOutputValue[1];
-//    }
-//    if(filterOutputValue[1] < minValue[1]){
-//        minValue[1] = filterOutputValue[1];
-//    }
+    //    if(filterOutputValue[1] > maxValue[1]){
+    //        maxValue[1] = filterOutputValue[1];
+    //    }
+    //    if(filterOutputValue[1] < minValue[1]){
+    //        minValue[1] = filterOutputValue[1];
+    //    }
     
     plot->update(propotionVolume[0]);
     //plot2->update(currentVolume[1]);
@@ -54,29 +56,31 @@ void ofApp::update(){
             countClear();
         } else {
             record(); //~199
-            ard.sendDigital(ledPin, ARD_LOW);
+            //ard.sendDigital(ledPin, ARD_LOW);
         }
-        count++;
+        
     }
-    
     
     //--------------------
     
     if (bPlay == true) {
         if (playCount >= RECORD_NUM) {
+            ard.sendDigital(ledPin, ARD_LOW);
             bPlay = false;
             countClear();
         } else {
             ard.sendDigital(ledPin, ARD_HIGH);
-            //play();
+            play();
         }
-        //play();
-        count++;
+        
+        //count++;
         playCount++;
     }
     
     
     //-------------------
+    
+    count++;
 }
 
 void ofApp::draw(){
@@ -94,10 +98,7 @@ void ofApp::draw(){
     }
     
     filterInputValue[0] = filterInputValue[1];
-    filterOutputValue[0] = filterOutputValue[1];
-    
-    //count++;
-    //playCount++;
+    //filterOutputValue[0] = filterOutputValue[1];
 }
 
 void ofApp::record(){
@@ -105,23 +106,38 @@ void ofApp::record(){
 }
 
 void ofApp::play(){
-    checkDelta(recordAnalog[count], recordAnalog[count-1]);
+    //ard.sendDigital(ledPin, ARD_HIGH);
+    //checkDelta(recordAnalog[count], recordAnalog[count-1]);
     //actuate();
     //stopActuate();
+    //ard.sendDigital(ledPin, ARD_LOW);
+//    delta = recordAnalog[count] - recordAnalog[count-1];
+//
+//    //    if (delta > 0) {
+//    //        bPolarity = true;
+//    //    } else if (delta < 0){
+//    //        bPolarity = false;
+//    //    }
+//
+//    absDelta = abs(delta);
+//
+//    if(absDelta > 1) {
+//        bDeform = true;
+//        //startTime = ofGetElapsedTimeMillis();
+//    } else {
+//        bDeform = false;
+//    }
     
     if(bDeform == true) {
+        ard.sendDigital(ledPin, ARD_HIGH);
         if(bPolarity == true){
-            ard.sendDigital(ledPin, ARD_HIGH);
             //sendDigitalArduinoInflation();
         }else{
-            ard.sendDigital(ledPin, ARD_LOW);
             //sendDigitalArduinoDeflation();
         }
+    } else {
+        ard.sendDigital(ledPin, ARD_LOW);
     }
-    //    else {
-    //        //ard.sendDigital(pumpPin02, ARD_LOW);
-    //        //sendDigitalArduinoMaintain();
-    //    }
 }
 
 void ofApp::countClear(){
@@ -131,7 +147,6 @@ void ofApp::countClear(){
 
 void ofApp::checkDelta(int value, int oldValue){
     delta = value - oldValue;
-    absDelta = abs(delta);
     
     if (delta > 0) {
         bPolarity = true;
@@ -139,14 +154,18 @@ void ofApp::checkDelta(int value, int oldValue){
         bPolarity = false;
     }
     
+    absDelta = abs(delta);
+    
     if(absDelta > 1) {
         bDeform = true;
         startTime = ofGetElapsedTimeMillis();
+    } else {
+        bDeform = false;
     }
 }
 
 void ofApp::actuate(){
-
+    
 }
 
 void ofApp::stopActuate(){
@@ -236,8 +255,15 @@ void ofApp::keyPressed(int key){
             break;
         case 'r':
             bPlay = true;
+            countClear();
             plot3->reset();
             bDrawPlot = true;
+            break;
+        case 'l':
+            bLed = true;
+            break;
+        case 'm':
+            bDeform = true;
             break;
         default:
             break;
@@ -246,6 +272,12 @@ void ofApp::keyPressed(int key){
 
 void ofApp::keyReleased(int key){
     switch (key) {
+        case 'l':
+            bLed = false;
+            break;
+        case 'm':
+            bDeform = false;
+            break;
         default:
             break;
     }
@@ -301,7 +333,7 @@ void ofApp::setupArduino(const int & version) {
     ard.sendDigitalPinMode(valvePin[4], ARD_OUTPUT); //D6
     ard.sendDigitalPinMode(valvePin[5], ARD_OUTPUT); //D7
     ard.sendDigitalPinMode(valvePin[6], ARD_OUTPUT); //D8
-    ard.sendDigitalPinMode(ledPin, ARD_OUTPUT); //D9
+    ard.sendDigitalPinMode(ledPin, ARD_OUTPUT); //D53
     
     ard.sendDigitalPinMode(pumpPin01, ARD_OUTPUT); //D11
     ard.sendDigitalPinMode(pumpPin02, ARD_OUTPUT); //D12
@@ -371,6 +403,14 @@ void ofApp::setupHistoryPlot(){
     plot3->setGridUnit(16);
     plot3->setShowSmoothedCurve(false);
     plot3->setSmoothFilter(0.1); //smooth filter strength
+}
+
+void ofApp::ledTest(){
+    if (bLed) {
+        ard.sendDigital(ledPin, ARD_HIGH);
+    } else {
+        ard.sendDigital(ledPin, ARD_LOW);
+    }
 }
 
 double ofApp::ceil2(double dIn, int nLen){

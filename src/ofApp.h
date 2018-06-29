@@ -86,6 +86,9 @@ public:
     bool valveTest4 = false;
     bool valveTest5 = false;
     bool valveTest6 = false;
+    void ledTest();
+    bool bLed = false;
+    
     
     //record
     static const int RECORD_NUM = 200;
@@ -115,7 +118,7 @@ private:
     
     double ceil2(double dIn, int nLen);
     
-    int ledPin = 9;
+    int ledPin = 2;
     int pumpPin01 = 10;
     int pumpPin02 = 11;
     int elastPin01 = 4;
