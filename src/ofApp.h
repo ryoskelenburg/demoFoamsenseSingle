@@ -41,7 +41,9 @@ public:
     void actuate();
     void stopActuate();
     void checktime();
-    void checkDelta(int x, int y);
+    int checkDelta(int x, int y);
+    int absoluteDelta(int x);
+    void deltaFunc();
     void sendDigitalArduinoDeflation();
     void sendDigitalArduinoInflation();
     void sendDigitalArduinoMaintain();
@@ -88,7 +90,6 @@ public:
     bool valveTest6 = false;
     void ledTest();
     bool bLed = false;
-    
     
     //record
     static const int RECORD_NUM = 200;

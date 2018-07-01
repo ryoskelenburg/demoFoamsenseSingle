@@ -70,6 +70,9 @@ void ofApp::update(){
             countClear();
         } else {
             ard.sendDigital(ledPin, ARD_HIGH);
+            delta = checkDelta(recordAnalog[count], recordAnalog[count-1]);
+            absDelta = absoluteDelta(delta);
+            deltaFunc();
             play();
         }
         
@@ -105,28 +108,24 @@ void ofApp::record(){
     recordAnalog[count] = propotionVolume[0];
 }
 
+void ofApp::deltaFunc(){
+    if(absDelta >= 1) {
+        bDeform = true;
+        startTime = ofGetElapsedTimeMillis();
+    } else {
+        bDeform = false;
+    }
+    
+    if (delta > 0) {
+        bPolarity = true;
+    } else if (delta < 0){
+        bPolarity = false;
+    }
+}
+
 void ofApp::play(){
-    //ard.sendDigital(ledPin, ARD_HIGH);
-    //checkDelta(recordAnalog[count], recordAnalog[count-1]);
     //actuate();
     //stopActuate();
-    //ard.sendDigital(ledPin, ARD_LOW);
-//    delta = recordAnalog[count] - recordAnalog[count-1];
-//
-//    //    if (delta > 0) {
-//    //        bPolarity = true;
-//    //    } else if (delta < 0){
-//    //        bPolarity = false;
-//    //    }
-//
-//    absDelta = abs(delta);
-//
-//    if(absDelta > 1) {
-//        bDeform = true;
-//        //startTime = ofGetElapsedTimeMillis();
-//    } else {
-//        bDeform = false;
-//    }
     
     if(bDeform == true) {
         ard.sendDigital(ledPin, ARD_HIGH);
@@ -145,23 +144,12 @@ void ofApp::countClear(){
     playCount = 0;
 }
 
-void ofApp::checkDelta(int value, int oldValue){
-    delta = value - oldValue;
-    
-    if (delta > 0) {
-        bPolarity = true;
-    } else if (delta < 0){
-        bPolarity = false;
-    }
-    
-    absDelta = abs(delta);
-    
-    if(absDelta > 1) {
-        bDeform = true;
-        startTime = ofGetElapsedTimeMillis();
-    } else {
-        bDeform = false;
-    }
+int ofApp::checkDelta(int value, int oldValue){
+    return value - oldValue;
+}
+
+int ofApp::absoluteDelta(int _delta){
+    return abs(_delta);
 }
 
 void ofApp::actuate(){
@@ -224,6 +212,9 @@ void ofApp::drawLog(){
     smallFont.drawString("bool bRecord: " + ofToString(bRecord) , valueRow[1], valueCol[0] + 120);
     smallFont.drawString("bool bPlay: " + ofToString(bPlay) , valueRow[1], valueCol[0] + 140);
     smallFont.drawString("bool bDeform: " + ofToString(bDeform) , valueRow[1], valueCol[0] + 160);
+    smallFont.drawString("bool bPolarity: " + ofToString(bPolarity) , valueRow[1], valueCol[0] + 180);
+    smallFont.drawString("delta: " + ofToString(delta) , valueRow[1], valueCol[0] + 200);
+    smallFont.drawString("absDelta: " + ofToString(absDelta) , valueRow[1], valueCol[0] + 220);
     
     smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[0], valueCol[1] + 30);
     smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
