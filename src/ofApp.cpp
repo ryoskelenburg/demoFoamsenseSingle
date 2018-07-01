@@ -128,14 +128,26 @@ void ofApp::play(){
     //stopActuate();
     
     if(bDeform == true) {
-        ard.sendDigital(ledPin, ARD_HIGH);
         if(bPolarity == true){
             //sendDigitalArduinoInflation();
+            //inflation
         }else{
+            //defltation
             //sendDigitalArduinoDeflation();
         }
     } else {
-        ard.sendDigital(ledPin, ARD_LOW);
+        //maintain
+        //sendDigitalArduinoMaintain();
+        
+        //ard.sendDigital(ledPin, ARD_LOW);
+    }
+    
+    if(bDeform == true) {
+        if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
+            bDeform = true;
+        } else {
+            bDeform = false;
+        }
     }
 }
 
@@ -152,35 +164,35 @@ int ofApp::absoluteDelta(int _delta){
     return abs(_delta);
 }
 
-void ofApp::actuate(){
-    
-}
-
-void ofApp::stopActuate(){
-    if(bDeform == true) {
-        if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
-            bDeform = true;
-        } else {
-            bDeform = false;
-        }
-    }
-}
+//void ofApp::stopActuate(){
+//    if(bDeform == true) {
+//        if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
+//            bDeform = true;
+//        } else {
+//            bDeform = false;
+//        }
+//    }
+//}
 
 void ofApp::sendDigitalArduinoDeflation(){
+    ard.sendDigital(valvePin[6], ARD_HIGH);
+    ard.sendDigital(valvePin[7], ARD_HIGH);
     ard.sendDigital(pumpPin01, ARD_HIGH);
-    ard.sendDigital(valvePin[0], ARD_LOW);
+    ard.sendDigital(pumpPin02, ARD_LOW);
 }
 
 void ofApp::sendDigitalArduinoInflation(){
+    ard.sendDigital(valvePin[6], ARD_HIGH);
+    ard.sendDigital(valvePin[7], ARD_HIGH);
+    ard.sendDigital(pumpPin01, ARD_LOW);
     ard.sendDigital(pumpPin02, ARD_HIGH);
-    ard.sendDigital(valvePin[0], ARD_HIGH);
 }
 
 void ofApp::sendDigitalArduinoMaintain(){
-    //    ard.sendDigital(3, ARD_LOW);
-    //    ard.sendDigital(4, ARD_LOW);
-    //    ard.sendDigital(5, ARD_HIGH);
-    //    ard.sendDigital(6, ARD_HIGH);
+    ard.sendDigital(valvePin[6], ARD_LOW);
+    ard.sendDigital(valvePin[7], ARD_LOW);
+    ard.sendDigital(pumpPin01, ARD_LOW);
+    ard.sendDigital(pumpPin02, ARD_LOW);
 }
 
 void ofApp::drawLog(){
