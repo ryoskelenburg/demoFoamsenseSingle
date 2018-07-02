@@ -34,8 +34,10 @@ public:
     bool bDeform = false;
     int delta = 0;
     int absDelta = 0;
+    int oldDelta = 0;
+    int _deltaDelta = 0;
     bool bPolarity = false;
-    int startTime = 0;
+    float startTime = 0;
     float milliSeconds = 0;
     
     void actuate();
@@ -43,19 +45,23 @@ public:
     void checktime();
     int checkDelta(int x, int y);
     int absoluteDelta(int x);
+    int deltaDelta(int x, int y);
     void deltaFunc();
     void sendDigitalArduinoDeflation();
     void sendDigitalArduinoInflation();
     void sendDigitalArduinoMaintain();
+    void manipulateElastOn();
+    void manipulateElastOff();
     
     static const int ANALOG_NUM = 2;
+    static const int MIDDLE_VALUE = 500;
     int currentVolume[ANALOG_NUM] = {0};
     int propotionVolume[ANALOG_NUM] = {0};
-    int minValue[ANALOG_NUM] = {0};
-    int maxValue[ANALOG_NUM] = {0};
+    int minValue[ANALOG_NUM] = {MIDDLE_VALUE};
+    int maxValue[ANALOG_NUM] = {MIDDLE_VALUE};
     int manipulateInput, manipulateOutput;
     
-    static const int DEFORM_RESOLUSION = 8;
+    static const int DEFORM_RESOLUSION = 100;
     
     //ofxgui
     ofxPanel gui;
@@ -92,9 +98,10 @@ public:
     bool bLed = false;
     
     //record
-    static const int RECORD_NUM = 200;
+    static const int RECORD_NUM = 300; //60 = 1sec
     int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
+    int loopCount = 0;
     bool bRecord = false;
     void record();
     void countClear();

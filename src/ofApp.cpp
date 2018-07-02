@@ -8,8 +8,8 @@ void ofApp::setup(){
     initArduino();
     
     gui.setup(); //ofxGui
-    gui.add(operateMinValueA0.setup("minValue: A0",100, 0, 1023));
-    gui.add(operateMaxValueA0.setup("MaxValue: A0",700, 0, 1023));
+    gui.add(operateMinValueA0.setup("minValue: A0",500, 0, 1023));
+    gui.add(operateMaxValueA0.setup("MaxValue: A0",500, 0, 1023));
     gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
     gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
     
@@ -27,7 +27,6 @@ void ofApp::update(){
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
     
     propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, DEFORM_RESOLUSION);
-    //propotionVolume[1] = ofMap(filterOutputValue[1], minValue[1], maxValue[1], 0, 20);
     
     if(filterInputValue[1] > maxValue[0]){
         maxValue[0] = filterInputValue[1];
@@ -35,12 +34,6 @@ void ofApp::update(){
     if(filterInputValue[1] < minValue[0]){
         minValue[0] = filterInputValue[1];
     }
-    //    if(filterOutputValue[1] > maxValue[1]){
-    //        maxValue[1] = filterOutputValue[1];
-    //    }
-    //    if(filterOutputValue[1] < minValue[1]){
-    //        minValue[1] = filterOutputValue[1];
-    //    }
     
     plot->update(propotionVolume[0]);
     //plot2->update(currentVolume[1]);
@@ -52,9 +45,11 @@ void ofApp::update(){
     
     if (bRecord == true) {
         if(count >= RECORD_NUM){ //200
+            manipulateElastOff();
             bRecord = false;
             countClear();
         } else {
+            manipulateElastOn();
             record(); //~199
             //ard.sendDigital(ledPin, ARD_LOW);
         }
@@ -65,14 +60,12 @@ void ofApp::update(){
     
     if (bPlay == true) {
         if (playCount >= RECORD_NUM) {
-            ard.sendDigital(ledPin, ARD_LOW);
             bPlay = false;
             countClear();
         } else {
-            ard.sendDigital(ledPin, ARD_HIGH);
             delta = checkDelta(recordAnalog[count], recordAnalog[count-1]);
             absDelta = absoluteDelta(delta);
-            deltaFunc();
+//            deltaFunc();
             play();
         }
         
@@ -84,6 +77,8 @@ void ofApp::update(){
     //-------------------
     
     count++;
+    
+    //operateMinValueA0 = (float)ceil2((double)operateMinValueA0, 1);
 }
 
 void ofApp::draw(){
@@ -100,6 +95,8 @@ void ofApp::draw(){
         }
     }
     
+    oldDelta = absDelta;
+    
     filterInputValue[0] = filterInputValue[1];
     //filterOutputValue[0] = filterOutputValue[1];
 }
@@ -110,50 +107,100 @@ void ofApp::record(){
 
 void ofApp::deltaFunc(){
     if(absDelta >= 1) {
-        bDeform = true;
+        //bDeform = true;
         startTime = ofGetElapsedTimeMillis();
     } else {
-        bDeform = false;
+        //bDeform = false;
     }
     
-    if (delta > 0) {
-        bPolarity = true;
-    } else if (delta < 0){
-        bPolarity = false;
-    }
+//    if (delta > 0) {
+//        //bPolarity = true;
+//    } else if (delta < 0){
+//        bPolarity = false;
+//    }
 }
 
 void ofApp::play(){
-    //actuate();
-    //stopActuate();
     
-    if(bDeform == true) {
-        if(bPolarity == true){
-            //sendDigitalArduinoInflation();
+    std::cout << "delta :" << count << ":" <<  delta << endl;
+        if(delta > 0){
             //inflation
-        }else{
-            //defltation
-            //sendDigitalArduinoDeflation();
-        }
-    } else {
-        //maintain
-        //sendDigitalArduinoMaintain();
-        
-        //ard.sendDigital(ledPin, ARD_LOW);
-    }
-    
-    if(bDeform == true) {
-        if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
+            startTime = ofGetElapsedTimeMillis();
             bDeform = true;
-        } else {
-            bDeform = false;
+            while(bDeform) {
+                sendDigitalArduinoInflation();
+                stopActuate();
+            }
+            //loopCount++;
+        }else if(delta < 0){
+            //defltation
+            startTime = ofGetElapsedTimeMillis();
+            bDeform = true;
+            while(bDeform) {
+                sendDigitalArduinoDeflation();
+                stopActuate();
+            }
+            //loopCount++;
+        } else if(delta == 0){
+            sendDigitalArduinoMaintain();
+            //loopCount++;
         }
-    }
+    
+    
+//    while (bDeform == true) {
+//        stopActuate();
+//        //std::cout << "bDeform IN:" << bDeform << endl;
+//        if(delta > 0){
+//            //inflation
+//             startTime = ofGetElapsedTimeMillis();
+//            sendDigitalArduinoInflation();
+//        }else if(delta < 0){
+//            //defltation
+//             startTime = ofGetElapsedTimeMillis();
+//            sendDigitalArduinoDeflation();
+//        } else if(delta == 0){
+//            sendDigitalArduinoMaintain();
+//        }
+//    }
+    //std::cout << "bDeform OUT:" << bDeform << endl;
+//    if (bDeform == false) {
+//        sendDigitalArduinoMaintain();
+//    }
+//
+    
+    
+//
+//    if (_deltaDelta == 0){
+//        sendDigitalArduinoMaintain();
+//    } else {
+//        if(bPolarity == true){
+//            //inflation
+//            sendDigitalArduinoInflation();
+//        }else{
+//            //defltation
+//            sendDigitalArduinoDeflation();
+//        }
+//    }
+    
+
+//    if (bDeform == true) {
+//        stopActuate();
+//        if(bPolarity == true){
+//            //inflation
+//            sendDigitalArduinoInflation();
+//        }else{
+//            //defltation
+//            sendDigitalArduinoDeflation();
+//        }
+//    } else {
+//sendDigitalArduinoMaintain();
+//    }
 }
 
 void ofApp::countClear(){
     count = 0;
     playCount = 0;
+    startTime = 0;
 }
 
 int ofApp::checkDelta(int value, int oldValue){
@@ -164,21 +211,23 @@ int ofApp::absoluteDelta(int _delta){
     return abs(_delta);
 }
 
-//void ofApp::stopActuate(){
-//    if(bDeform == true) {
-//        if(ofGetElapsedTimeMillis() - startTime < 70 * delta) {
-//            bDeform = true;
-//        } else {
-//            bDeform = false;
-//        }
-//    }
-//}
+int ofApp::deltaDelta(int _x, int _y){
+    return abs(_x - _y);
+}
 
-void ofApp::sendDigitalArduinoDeflation(){
-    ard.sendDigital(valvePin[6], ARD_HIGH);
-    ard.sendDigital(valvePin[7], ARD_HIGH);
-    ard.sendDigital(pumpPin01, ARD_HIGH);
-    ard.sendDigital(pumpPin02, ARD_LOW);
+void ofApp::stopActuate(){
+    //if(bDeform == true) {
+        //RFP32B03B: 3.8L/min = 63ml/sec
+        //elastV1.0: 90ml, resolution:8, 11.25ml
+        //resolution : 0.179sec = 179milliseconds
+        //the elapsed time in milliseconds (1000 milliseconds = 1 second).
+        if(ofGetElapsedTimeMillis() - startTime < 1/60) {
+            bDeform = true;
+        } else {
+            bDeform = false;
+        }
+    //}
+
 }
 
 void ofApp::sendDigitalArduinoInflation(){
@@ -188,11 +237,28 @@ void ofApp::sendDigitalArduinoInflation(){
     ard.sendDigital(pumpPin02, ARD_HIGH);
 }
 
+void ofApp::sendDigitalArduinoDeflation(){
+    ard.sendDigital(valvePin[6], ARD_HIGH);
+    ard.sendDigital(valvePin[7], ARD_HIGH);
+    ard.sendDigital(pumpPin01, ARD_HIGH);
+    ard.sendDigital(pumpPin02, ARD_LOW);
+}
+
 void ofApp::sendDigitalArduinoMaintain(){
     ard.sendDigital(valvePin[6], ARD_LOW);
     ard.sendDigital(valvePin[7], ARD_LOW);
     ard.sendDigital(pumpPin01, ARD_LOW);
     ard.sendDigital(pumpPin02, ARD_LOW);
+}
+
+void ofApp::manipulateElastOn(){
+    ard.sendDigital(valvePin[6], ARD_HIGH);
+    ard.sendDigital(valvePin[7], ARD_HIGH);
+}
+
+void ofApp::manipulateElastOff(){
+    ard.sendDigital(valvePin[6], ARD_LOW);
+    ard.sendDigital(valvePin[7], ARD_LOW);
 }
 
 void ofApp::drawLog(){
@@ -228,14 +294,14 @@ void ofApp::drawLog(){
     smallFont.drawString("delta: " + ofToString(delta) , valueRow[1], valueCol[0] + 200);
     smallFont.drawString("absDelta: " + ofToString(absDelta) , valueRow[1], valueCol[0] + 220);
     
-    smallFont.drawString("40resolution: 2.25ml = 36ms", valueRow[0], valueCol[1] + 30);
-    smallFont.drawString("millis" + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
-    smallFont.drawString("--------- INPUT", valueRow[0], valueCol[1] + 80);
+    smallFont.drawString("millis: " + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
+    smallFont.drawString("startTime: " + ofToString(startTime), valueRow[0], valueCol[1] + 70);
+    smallFont.drawString("--------- INPUT", valueRow[0], valueCol[1] + 100);
     ofSetColor(255, 0, 0);
-    smallFont.drawString("--------- OUTPUT", valueRow[0], valueCol[1] + 100);
+    smallFont.drawString("--------- OUTPUT", valueRow[0], valueCol[1] + 120);
     
-    std::cout << "current[" << count << "]: " << recordAnalog[count] << endl;
-    std::cout << "recordAnalog[" << count-1 << "]: " << recordAnalog[count-1] << endl;
+//    std::cout << "current[" << count << "]: " << recordAnalog[count] << endl;
+//    std::cout << "recordAnalog[" << count-1 << "]: " << recordAnalog[count-1] << endl;
 }
 
 void ofApp::keyPressed(int key){
@@ -422,4 +488,3 @@ double ofApp::ceil2(double dIn, int nLen){
     dOut = (double)(int)(dOut + 0.9);
     return dOut * pow(10.0, -nLen);
 }
-// = (float)ceil2((double)neutral,1);
