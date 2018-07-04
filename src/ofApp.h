@@ -46,7 +46,6 @@ public:
     int checkDelta(int x, int y);
     int absoluteDelta(int x);
     int deltaDelta(int x, int y);
-    void deltaFunc();
     void sendDigitalArduinoDeflation();
     void sendDigitalArduinoInflation();
     void sendDigitalArduinoMaintain();
@@ -98,7 +97,7 @@ public:
     bool bLed = false;
     
     //record
-    static const int RECORD_NUM = 300; //60 = 1sec
+    static const int RECORD_NUM = 600; //60 = 1sec
     int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
     int loopCount = 0;
