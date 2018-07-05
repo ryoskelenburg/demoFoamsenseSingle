@@ -2,18 +2,26 @@
 void ofApp::setup(){
     ofBackground(20, 20, 20);
     ofSetVerticalSync(true);
-    ofSetFrameRate(60);
+    ofSetFrameRate(FRAMERATE_NUM);
     font.load("franklinGothic.otf", 16);
     smallFont.load("franklinGothic.otf", 10);
     initArduino();
     
     gui.setup(); //ofxGui
-    gui.add(operateMinValueA0.setup("minValue: A0",500, 0, 1023));
-    gui.add(operateMaxValueA0.setup("MaxValue: A0",500, 0, 1023));
+    gui.add(operateMinValueA0.setup("minValue: A0",200, 0, 1023));
+    gui.add(operateMaxValueA0.setup("MaxValue: A0",933, 0, 1023));
     gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
     gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
     
     setupHistoryPlot(); //ofxHistoryPlot
+    myReadFile.open("text.txt",ofFile::ReadOnly);
+    //cout << myReadFile.readToBuffer().getText();
+    auto input = ofSplitString(myReadFile.readToBuffer().getText(), "\n");
+    for(int i= 0; i < RECORD_NUM;i++)
+    {
+        recordAnalog[i] = stoi(input[i]);
+    }
+    //if(myTextFile.exists())cout << "exists" << endl;
     
 }
 
@@ -45,11 +53,11 @@ void ofApp::update(){
     
     if (bRecord == true) {
         if(count >= RECORD_NUM){ //200
-            manipulateElastOff();
+            //manipulateElastOff();
             bRecord = false;
             countClear();
         } else {
-            manipulateElastOn();
+            //manipulateElastOn();
             record(); //~199
         }
         
@@ -73,6 +81,16 @@ void ofApp::update(){
     
     //-------------------
     
+    if (bWrite == true) {
+        myTextFile.open("text.txt",ofFile::WriteOnly);
+        for(int i = 0;i < RECORD_NUM;i++)
+        {
+            myTextFile << recordAnalog[i] << endl;
+        }
+//        myTextFile << "some text" << endl;
+        bWrite = false;
+    }
+    
     count++;
 }
 
@@ -90,8 +108,6 @@ void ofApp::draw(){
         }
     }
     
-    oldDelta = absDelta;
-    
     filterInputValue[0] = filterInputValue[1];
 }
 
@@ -101,7 +117,7 @@ void ofApp::record(){
 
 void ofApp::play(){
     
-    std::cout << "delta :" << count << ":" <<  delta << endl;
+    std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,delta :"<<  delta << endl;
     if(delta > 0){
         //inflation
         startTime = ofGetElapsedTimeMillis();
@@ -121,6 +137,7 @@ void ofApp::play(){
     } else if(delta == 0){
         sendDigitalArduinoMaintain();
     }
+    //serial.flush();
     
 }
 
@@ -152,6 +169,10 @@ void ofApp::stopActuate(){
     } else {
         bDeform = false;
     }
+}
+
+void ofApp::coolDown(){
+    
 }
 
 void ofApp::sendDigitalArduinoInflation(){
@@ -217,6 +238,7 @@ void ofApp::drawLog(){
     smallFont.drawString("bool bPolarity: " + ofToString(bPolarity) , valueRow[1], valueCol[0] + 180);
     smallFont.drawString("delta: " + ofToString(delta) , valueRow[1], valueCol[0] + 200);
     smallFont.drawString("absDelta: " + ofToString(absDelta) , valueRow[1], valueCol[0] + 220);
+    smallFont.drawString("bool bWrite: " + ofToString(bWrite) , valueRow[1], valueCol[0] + 240);
     
     smallFont.drawString("millis: " + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
     smallFont.drawString("startTime: " + ofToString(startTime), valueRow[0], valueCol[1] + 70);
@@ -257,6 +279,15 @@ void ofApp::keyPressed(int key){
             break;
         case 'm':
             bDeform = true;
+            break;
+        case 'q':
+            //bPlay = false;
+            //bDeform = false;
+            sendDigitalArduinoMaintain();
+            break;
+        case 'w':
+            bWrite = true;
+            //myTextFile << "some text" << endl;
             break;
         default:
             break;

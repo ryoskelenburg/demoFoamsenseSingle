@@ -42,6 +42,7 @@ public:
     
     void actuate();
     void stopActuate();
+    void coolDown();
     void checktime();
     int checkDelta(int x, int y);
     int absoluteDelta(int x);
@@ -60,7 +61,7 @@ public:
     int maxValue[ANALOG_NUM] = {MIDDLE_VALUE};
     int manipulateInput, manipulateOutput;
     
-    static const int DEFORM_RESOLUSION = 100;
+    static const int DEFORM_RESOLUSION = 60;
     
     //ofxgui
     ofxPanel gui;
@@ -97,7 +98,8 @@ public:
     bool bLed = false;
     
     //record
-    static const int RECORD_NUM = 600; //60 = 1sec
+    static const int FRAMERATE_NUM = 60;
+    static const int RECORD_NUM = 600; //30 = 1sec
     int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
     int loopCount = 0;
@@ -109,6 +111,11 @@ public:
     int playCount = 0;
     bool bPlay = false;
     void play();
+    
+    
+    ofFile myTextFile;
+    ofFile myReadFile;
+    bool bWrite = false;
     
 private:
     ofArduino ard; //arduino
