@@ -26,6 +26,8 @@ void ofApp::setup(){
 //        }
 //-------------------------
     
+    recordFile.open("recordData" + ofGetTimestampString() + ".txt",ofFile::WriteOnly);
+    feedbackFile.open("feedBackData" + ofGetTimestampString() + ".txt",ofFile::WriteOnly);
 }
 
 void ofApp::update(){
@@ -53,13 +55,14 @@ void ofApp::update(){
     //-------------------
     
     if (bRecord == true) {
-        if(count >= RECORD_NUM){ //200
+        if(count >= RECORD_NUM){
             //manipulateElastOff();
             bRecord = false;
             countClear();
         } else {
             //manipulateElastOn();
-            record(); //~199
+            record();
+            recordFile << recordAnalog[count] << endl;
         }
         
     }
@@ -76,6 +79,7 @@ void ofApp::update(){
             delta = checkDelta(recordAnalog[count], recordAnalog[count-1]);
             absDelta = absoluteDelta(delta);
             play();
+            feedbackFile << propotionVolume[0]  << endl;
         }
         
         playCount++;
@@ -84,14 +88,15 @@ void ofApp::update(){
     
     //-------------------
     
-    if (bWrite == true) {
-        myTextFile.open("text.txt",ofFile::WriteOnly);
-        for(int i = 0;i < RECORD_NUM;i++)
-        {
-            myTextFile << recordAnalog[i] << endl;
-        }
-        bWrite = false;
-    }
+//    if (bRecordWrite == true) {
+//
+//        myTextFile.open("text.txt",ofFile::WriteOnly);
+//        for(int i = 0;i < RECORD_NUM;i++)
+//        {
+//            myTextFile << recordAnalog[i] << endl;
+//        }
+//        bRecordWrite = false;
+//    }
     
     count++;
 }
@@ -119,10 +124,12 @@ void ofApp::record(){
 
 void ofApp::play(){
     
-//    std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,delta :"<<  delta << endl;
+    std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,delta :"<<  delta << endl;
+    
+    startTime = ofGetElapsedTimeMillis();
     if(delta > 0){
         //inflation
-        startTime = ofGetElapsedTimeMillis();
+        //startTime = ofGetElapsedTimeMillis();
         bDeform = true;
         while(bDeform) {
             sendDigitalArduinoInflation();
@@ -130,7 +137,7 @@ void ofApp::play(){
         }
     }else if(delta < 0){
         //defltation
-        startTime = ofGetElapsedTimeMillis();
+        //startTime = ofGetElapsedTimeMillis();
         bDeform = true;
         while(bDeform) {
             sendDigitalArduinoDeflation();
@@ -165,7 +172,7 @@ void ofApp::stopActuate(){
     //elastV1.0: 90ml, resolution:8, 11.25ml
     //resolution : 0.179sec = 179milliseconds
     //the elapsed time in milliseconds (1000 milliseconds = 1 second).
-    if(ofGetElapsedTimeMillis() - startTime < 1/60) {
+    if(ofGetElapsedTimeMillis() - startTime < 1000 * (1/ 30)) {
         bDeform = true;
     } else {
         bDeform = false;
@@ -213,7 +220,13 @@ void ofApp::drawLog(){
     if (!bSetupArduino){
         font.drawString("Connect ready...\n", valueRow[0], valueCol[1]);
     } else {
-        font.drawString("Connect succeed!\n", valueRow[0], valueCol[1]);
+        if (bRecord == true) {
+            font.drawString("Recording...\n", valueRow[0], valueCol[1]);
+        } else if (bPlay == true) {
+            font.drawString("Playing...\n", valueRow[0], valueCol[1]);
+        } else {
+            font.drawString("Connect succeed!\n", valueRow[0], valueCol[1]);
+        }
     }
     
     font.drawString("Propotion : " + ofToString(propotionVolume[0]), valueRow[2], valueCol[0]);
@@ -227,19 +240,18 @@ void ofApp::drawLog(){
 //    smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow[2], valueCol[1] + 60);
 //    smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[2],  valueCol[1] + 80);
     
-    smallFont.drawString("count : " + ofToString(count) , valueRow[1], valueCol[0] + 50);
-    smallFont.drawString("playCount : " + ofToString(playCount) , valueRow[1], valueCol[0] + 65);
-    smallFont.drawString("recordAnalog[0] : " + ofToString(recordAnalog[0]) , valueRow[1], valueCol[0] + 80);
-    smallFont.drawString("recordAnalog[1] : " + ofToString(recordAnalog[1]) , valueRow[1], valueCol[0] + 90);
-    smallFont.drawString("recordAnalog[LAST] : " + ofToString(recordAnalog[RECORD_NUM - 1]) , valueRow[1], valueCol[0] + 100);
+    smallFont.drawString("count : " + ofToString(count) , valueRow[1], valueCol[0]+10);
+    smallFont.drawString("playCount : " + ofToString(playCount), valueRow[1], valueCol[0]+20);
+    smallFont.drawString("recordAnalog[0] : " + ofToString(recordAnalog[0]) , valueRow[1], valueCol[0]+30);
+    smallFont.drawString("recordAnalog[1] : " + ofToString(recordAnalog[1]) , valueRow[1], valueCol[0]+40);
+    smallFont.drawString("recordAnalog[LAST] : " + ofToString(recordAnalog[RECORD_NUM - 1]) , valueRow[1], valueCol[0]+50);
     
-    smallFont.drawString("bool bRecord: " + ofToString(bRecord) , valueRow[1], valueCol[0] + 120);
-    smallFont.drawString("bool bPlay: " + ofToString(bPlay) , valueRow[1], valueCol[0] + 140);
-    smallFont.drawString("bool bDeform: " + ofToString(bDeform) , valueRow[1], valueCol[0] + 160);
-    smallFont.drawString("bool bPolarity: " + ofToString(bPolarity) , valueRow[1], valueCol[0] + 180);
-    smallFont.drawString("delta: " + ofToString(delta) , valueRow[1], valueCol[0] + 200);
-    smallFont.drawString("absDelta: " + ofToString(absDelta) , valueRow[1], valueCol[0] + 220);
-    smallFont.drawString("bool bWrite: " + ofToString(bWrite) , valueRow[1], valueCol[0] + 240);
+//    smallFont.drawString("bRecord: " + ofToString(bRecord) , valueRow[1], valueCol[0] + 120);
+//    smallFont.drawString("bPlay: " + ofToString(bPlay) , valueRow[1], valueCol[0] + 140);
+//    smallFont.drawString("bDeform: " + ofToString(bDeform) , valueRow[1], valueCol[0] + 160);
+//    smallFont.drawString("delta: " + ofToString(delta) , valueRow[1], valueCol[0] + 200);
+//    smallFont.drawString("absDelta: " + ofToString(absDelta) , valueRow[1], valueCol[0] + 220);
+//    smallFont.drawString("bWrite: " + ofToString(bWrite) , valueRow[1], valueCol[0] + 240);
     
     smallFont.drawString("millis: " + ofToString(milliSeconds), valueRow[0], valueCol[1] + 50);
     smallFont.drawString("startTime: " + ofToString(startTime), valueRow[0], valueCol[1] + 70);
@@ -272,6 +284,7 @@ void ofApp::keyPressed(int key){
         case 'r':
             bPlay = true;
             countClear();
+            plot->reset();
             plot3->reset();
             bDrawPlot = true;
             break;
@@ -287,7 +300,7 @@ void ofApp::keyPressed(int key){
             sendDigitalArduinoMaintain();
             break;
         case 'w':
-            bWrite = true;
+            //bRecordWrite = true;
             break;
         default:
             break;

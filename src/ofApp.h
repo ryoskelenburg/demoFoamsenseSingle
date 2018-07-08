@@ -98,8 +98,8 @@ public:
     bool bLed = false;
     
     //record
-    static const int FRAMERATE_NUM = 30;
-    static const int RECORD_NUM = 180; 
+    static const int FRAMERATE_NUM = 30; //1sec
+    static const int RECORD_NUM = FRAMERATE_NUM * 10; //nSec
     int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
     int loopCount = 0;
@@ -113,9 +113,10 @@ public:
     void play();
     
     
-    ofFile myTextFile;
-    ofFile myReadFile;
-    bool bWrite = false;
+    ofFile recordFile;
+    ofFile feedbackFile;
+    bool bRecordWrite = false;
+    bool bPlatWrite = false;
     
 private:
     ofArduino ard; //arduino
