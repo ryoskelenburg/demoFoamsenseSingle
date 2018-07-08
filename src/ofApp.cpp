@@ -26,6 +26,8 @@ void ofApp::setup(){
 //        }
 //-------------------------
     
+    recordFile.open("recordData" + ofGetTimestampString() + ".txt",ofFile::WriteOnly);
+    feedbackFile.open("feedBackData" + ofGetTimestampString() + ".txt",ofFile::WriteOnly);
 }
 
 void ofApp::update(){
@@ -53,13 +55,14 @@ void ofApp::update(){
     //-------------------
     
     if (bRecord == true) {
-        if(count >= RECORD_NUM){ //200
+        if(count >= RECORD_NUM){
             //manipulateElastOff();
             bRecord = false;
             countClear();
         } else {
             //manipulateElastOn();
-            record(); //~199
+            record();
+            recordFile << recordAnalog[count] << endl;
         }
         
     }
@@ -76,6 +79,7 @@ void ofApp::update(){
             delta = checkDelta(recordAnalog[count], recordAnalog[count-1]);
             absDelta = absoluteDelta(delta);
             play();
+            feedbackFile << propotionVolume[0]  << endl;
         }
         
         playCount++;
@@ -84,14 +88,15 @@ void ofApp::update(){
     
     //-------------------
     
-    if (bWrite == true) {
-        myTextFile.open("text.txt",ofFile::WriteOnly);
-        for(int i = 0;i < RECORD_NUM;i++)
-        {
-            myTextFile << recordAnalog[i] << endl;
-        }
-        bWrite = false;
-    }
+//    if (bRecordWrite == true) {
+//
+//        myTextFile.open("text.txt",ofFile::WriteOnly);
+//        for(int i = 0;i < RECORD_NUM;i++)
+//        {
+//            myTextFile << recordAnalog[i] << endl;
+//        }
+//        bRecordWrite = false;
+//    }
     
     count++;
 }
@@ -121,10 +126,10 @@ void ofApp::play(){
     
     std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,delta :"<<  delta << endl;
     
-    
+    startTime = ofGetElapsedTimeMillis();
     if(delta > 0){
         //inflation
-        startTime = ofGetElapsedTimeMillis();
+        //startTime = ofGetElapsedTimeMillis();
         bDeform = true;
         while(bDeform) {
             sendDigitalArduinoInflation();
@@ -132,7 +137,7 @@ void ofApp::play(){
         }
     }else if(delta < 0){
         //defltation
-        startTime = ofGetElapsedTimeMillis();
+        //startTime = ofGetElapsedTimeMillis();
         bDeform = true;
         while(bDeform) {
             sendDigitalArduinoDeflation();
@@ -167,7 +172,7 @@ void ofApp::stopActuate(){
     //elastV1.0: 90ml, resolution:8, 11.25ml
     //resolution : 0.179sec = 179milliseconds
     //the elapsed time in milliseconds (1000 milliseconds = 1 second).
-    if(ofGetElapsedTimeMillis() - startTime < 1000 * (1/30)) {
+    if(ofGetElapsedTimeMillis() - startTime < 1000 * (1/ 30)) {
         bDeform = true;
     } else {
         bDeform = false;
@@ -219,10 +224,7 @@ void ofApp::drawLog(){
             font.drawString("Recording...\n", valueRow[0], valueCol[1]);
         } else if (bPlay == true) {
             font.drawString("Playing...\n", valueRow[0], valueCol[1]);
-        }else if (bWrite == true){
-            font.drawString("Writing...\n", valueRow[0], valueCol[1]);
         } else {
-            
             font.drawString("Connect succeed!\n", valueRow[0], valueCol[1]);
         }
     }
@@ -298,7 +300,7 @@ void ofApp::keyPressed(int key){
             sendDigitalArduinoMaintain();
             break;
         case 'w':
-            bWrite = true;
+            //bRecordWrite = true;
             break;
         default:
             break;
