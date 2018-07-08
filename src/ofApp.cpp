@@ -10,24 +10,25 @@ void ofApp::setup(){
     gui.setup(); //ofxGui
     gui.add(operateMinValueA0.setup("minValue: A0",200, 0, 1023));
     gui.add(operateMaxValueA0.setup("MaxValue: A0",933, 0, 1023));
-    gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
-    gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
+    //gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
+    //gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
     
     setupHistoryPlot(); //ofxHistoryPlot
-    myReadFile.open("text.txt",ofFile::ReadOnly);
-    //cout << myReadFile.readToBuffer().getText();
-    auto input = ofSplitString(myReadFile.readToBuffer().getText(), "\n");
-    for(int i= 0; i < RECORD_NUM;i++)
-    {
-        recordAnalog[i] = stoi(input[i]);
-    }
-    //if(myTextFile.exists())cout << "exists" << endl;
+    
+
+//------import file--------
+//    myReadFile.open("text.txt",ofFile::ReadOnly);
+//    cout << myReadFile.readToBuffer().getText();
+//    auto input = ofSplitString(myReadFile.readToBuffer().getText(), "\n");
+//        for(int i= 0; i < RECORD_NUM;i++)
+//        {
+//            recordAnalog[i] = stoi(input[i]);
+//        }
+//-------------------------
     
 }
 
 void ofApp::update(){
-    //ard.sendDigital(valvePin[7], ARD_HIGH);
-    
     currentFrameRate = ofGetFrameRate();
     updateArduino();
     
@@ -66,6 +67,7 @@ void ofApp::update(){
     //--------------------
     
     if (bPlay == true) {
+        
         if (playCount >= RECORD_NUM) {
             bPlay = false;
             countClear();
@@ -75,6 +77,7 @@ void ofApp::update(){
             absDelta = absoluteDelta(delta);
             play();
         }
+        
         playCount++;
     }
     
@@ -87,7 +90,6 @@ void ofApp::update(){
         {
             myTextFile << recordAnalog[i] << endl;
         }
-//        myTextFile << "some text" << endl;
         bWrite = false;
     }
     
@@ -117,7 +119,7 @@ void ofApp::record(){
 
 void ofApp::play(){
     
-    std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,delta :"<<  delta << endl;
+//    std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,delta :"<<  delta << endl;
     if(delta > 0){
         //inflation
         startTime = ofGetElapsedTimeMillis();
@@ -137,7 +139,6 @@ void ofApp::play(){
     } else if(delta == 0){
         sendDigitalArduinoMaintain();
     }
-    //serial.flush();
     
 }
 
@@ -215,16 +216,16 @@ void ofApp::drawLog(){
         font.drawString("Connect succeed!\n", valueRow[0], valueCol[1]);
     }
     
-    font.drawString("Current propotion : " + ofToString(propotionVolume[0]) + ", Current Volume : " + ofToString(currentVolume[0]) + "ml", valueRow[2], valueCol[0]);
+    font.drawString("Propotion : " + ofToString(propotionVolume[0]), valueRow[2], valueCol[0]);
     smallFont.drawString("rawInputValue  :  " + ofToString(rawInputValue), valueRow[2], valueCol[0] + 20);
     smallFont.drawString("InputValue     :  " + ofToString(filterInputValue[1]), valueRow[2], valueCol[0] + 40);
     smallFont.drawString("minValue  :  " + ofToString(minValue[0]), valueRow[2], valueCol[0] + 60);
     smallFont.drawString("maxValue     :  " + ofToString(maxValue[0]), valueRow[2], valueCol[0] + 80);
-    font.drawString("Current propotion : " + ofToString(propotionVolume[1]) + ", Current Volume : " + ofToString(currentVolume[1]) + "ml", valueRow[2], valueCol[1]);
-    smallFont.drawString("rawOutputValue :  " + ofToString(rawOutputValue), valueRow[2], valueCol[1] + 20);
-    smallFont.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), valueRow[2], valueCol[1] + 40);
-    smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow[2], valueCol[1] + 60);
-    smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[2], valueCol[1] + 80);
+//    font.drawString("Current propotion : " + ofToString(propotionVolume[1]) + ", Current Volume : " + ofToString(currentVolume[1]) + "ml", valueRow[2], valueCol[1]);
+//    smallFont.drawString("rawOutputValue :  " + ofToString(rawOutputValue), valueRow[2], valueCol[1] + 20);
+//    smallFont.drawString("OutputValue    :  " + ofToString(filterOutputValue[1]), valueRow[2], valueCol[1] + 40);
+//    smallFont.drawString("minValue  :  " + ofToString(minValue[1]), valueRow[2], valueCol[1] + 60);
+//    smallFont.drawString("maxValue     :  " + ofToString(maxValue[1]), valueRow[2],  valueCol[1] + 80);
     
     smallFont.drawString("count : " + ofToString(count) , valueRow[1], valueCol[0] + 50);
     smallFont.drawString("playCount : " + ofToString(playCount) , valueRow[1], valueCol[0] + 65);
@@ -287,7 +288,6 @@ void ofApp::keyPressed(int key){
             break;
         case 'w':
             bWrite = true;
-            //myTextFile << "some text" << endl;
             break;
         default:
             break;

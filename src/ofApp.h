@@ -98,8 +98,8 @@ public:
     bool bLed = false;
     
     //record
-    static const int FRAMERATE_NUM = 60;
-    static const int RECORD_NUM = 600; //30 = 1sec
+    static const int FRAMERATE_NUM = 30;
+    static const int RECORD_NUM = 180; 
     int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
     int loopCount = 0;
