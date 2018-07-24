@@ -3,15 +3,15 @@ void ofApp::setup(){
     ofBackground(20, 20, 20);
     ofSetVerticalSync(true);
     ofSetFrameRate(FRAMERATE_NUM);
-    font.load("franklinGothic.otf", 16);
-    smallFont.load("franklinGothic.otf", 10);
+    font.load("font/franklinGothic.otf", 16);
+    smallFont.load("font/franklinGothic.otf", 10);
     initArduino();
     
     gui.setup(); //ofxGui
-    gui.add(operateMinValueA0.setup("minValue: A0",200, 0, 1023));
-    gui.add(operateMaxValueA0.setup("MaxValue: A0",933, 0, 1023));
-    //gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
-    //gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
+    gui.add(operateMinValueA0.setup("minValue: A0",250, 0, 1023));
+    gui.add(operateMaxValueA0.setup("MaxValue: A0",1000, 0, 1023));
+    gui.add(operateMinValueA1.setup("minValue: A1",300, 0, 1023));
+    gui.add(operateMaxValueA1.setup("MaxValue: A1",550, 0, 1023));
     
     setupHistoryPlot(); //ofxHistoryPlot
     
@@ -26,8 +26,8 @@ void ofApp::setup(){
 //        }
 //-------------------------
     
-    recordFile.open("recordData" + ofGetTimestampString() + ".txt",ofFile::WriteOnly);
-    feedbackFile.open("feedBackData" + ofGetTimestampString() + ".txt",ofFile::WriteOnly);
+    recordFile.open(ofGetTimestampString() + "recordData.txt",ofFile::WriteOnly);
+    feedbackFile.open(ofGetTimestampString() + "feedBackData.txt",ofFile::WriteOnly);
 }
 
 void ofApp::update(){
@@ -35,9 +35,12 @@ void ofApp::update(){
     updateArduino();
     
     rawInputValue = ard.getAnalog(elastPin01);
+    rawInputValue_02 = ard.getAnalog(elastPin02);
     filterInputValue[1] = a * filterInputValue[0] + (1-a) * rawInputValue;
+    filterInputValue_02[1] = a * filterInputValue_02[0] + (1-a) * rawInputValue_02;
     
     propotionVolume[0] = ofMap(filterInputValue[1], minValue[0], maxValue[0], 0, DEFORM_RESOLUSION);
+    propotionVolume_02[0] = ofMap(filterInputValue_02[1], minValue[1], maxValue[1], 0, DEFORM_RESOLUSION);
     
     if(filterInputValue[1] > maxValue[0]){
         maxValue[0] = filterInputValue[1];
@@ -46,8 +49,15 @@ void ofApp::update(){
         minValue[0] = filterInputValue[1];
     }
     
+    if(filterInputValue_02[1] > maxValue[1]){
+        maxValue[1] = filterInputValue_02[1];
+    }
+    if(filterInputValue_02[1] < minValue[1]){
+        minValue[1] = filterInputValue_02[1];
+    }
+    
     plot->update(propotionVolume[0]);
-    //plot2->update(currentVolume[1]);
+    plot2->update(propotionVolume_02[0]);
     plot3->update(recordAnalog[count]);
     
     milliSeconds = ofGetElapsedTimeMillis();
@@ -75,7 +85,18 @@ void ofApp::update(){
             bPlay = false;
             countClear();
             sendDigitalArduinoMaintain();
-        } else {
+        } else if(playCount == RECORD_NUM - 1){
+            //delta = checkDelta(recordAnalog[count], recordAnalog[count-1]);
+            delta = checkDelta(propotionVolume[0], recordAnalog[count]);
+            
+            absDelta = absoluteDelta(delta);
+            play();
+            
+            feedbackFile << propotionVolume[0]  << endl;
+            screen.grabScreen(0, 0 , ofGetWidth(), ofGetHeight());
+            screen.save(ofGetTimestampString() + "screenshot.png");
+        }
+        else {
             delta = checkDelta(recordAnalog[count], recordAnalog[count-1]);
             absDelta = absoluteDelta(delta);
             play();
@@ -97,13 +118,16 @@ void ofApp::update(){
 //        }
 //        bRecordWrite = false;
 //    }
-    
+    testDelta = propotionVolume[0] - recordAnalog[count];
     count++;
+   // ard.serialFlush("/dev/cu.usbmodem1411");
 }
 
 void ofApp::draw(){
     drawLog();
     gui.draw();
+    
+    //std::cout << rawInputValue_02 << endl;
     
     plot->draw(0, 400, ofGetWidth(), 400);
     //plot2->draw(0, 400, ofGetWidth(), 400);
@@ -124,10 +148,30 @@ void ofApp::record(){
 
 void ofApp::play(){
     
-    std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,delta :"<<  delta << endl;
+    std::cout << "count :" << count << " ,recordAnalog :"<< recordAnalog[count] << " ,currentVolume :"<< propotionVolume[0] << " ,delta :"<<  delta << endl;
     
     startTime = ofGetElapsedTimeMillis();
-    if(delta > 0){
+//    if(delta > 0){
+//        //inflation
+//        //startTime = ofGetElapsedTimeMillis();
+//        bDeform = true;
+//        while(bDeform) {
+//            sendDigitalArduinoInflation();
+//            stopActuate();
+//        }
+//    }else if(delta < 0){
+//        //defltation
+//        //startTime = ofGetElapsedTimeMillis();
+//        bDeform = true;
+//        while(bDeform) {
+//            sendDigitalArduinoDeflation();
+//            stopActuate();
+//        }
+//    } else if(delta == 0){
+//        sendDigitalArduinoMaintain();
+//    }
+
+    if(testDelta < 2){
         //inflation
         //startTime = ofGetElapsedTimeMillis();
         bDeform = true;
@@ -135,7 +179,7 @@ void ofApp::play(){
             sendDigitalArduinoInflation();
             stopActuate();
         }
-    }else if(delta < 0){
+    }else if(testDelta > 2){
         //defltation
         //startTime = ofGetElapsedTimeMillis();
         bDeform = true;
@@ -143,10 +187,9 @@ void ofApp::play(){
             sendDigitalArduinoDeflation();
             stopActuate();
         }
-    } else if(delta == 0){
+    } else if(testDelta == 0){
         sendDigitalArduinoMaintain();
     }
-    
 }
 
 void ofApp::countClear(){
@@ -172,7 +215,7 @@ void ofApp::stopActuate(){
     //elastV1.0: 90ml, resolution:8, 11.25ml
     //resolution : 0.179sec = 179milliseconds
     //the elapsed time in milliseconds (1000 milliseconds = 1 second).
-    if(ofGetElapsedTimeMillis() - startTime < 1000 * (1/ 30)) {
+    if(ofGetElapsedTimeMillis() - startTime < 1000 * (1/30)) {
         bDeform = true;
     } else {
         bDeform = false;
@@ -184,22 +227,19 @@ void ofApp::coolDown(){
 }
 
 void ofApp::sendDigitalArduinoInflation(){
-    ard.sendDigital(valvePin[6], ARD_HIGH);
     ard.sendDigital(valvePin[7], ARD_HIGH);
     ard.sendDigital(pumpPin01, ARD_LOW);
     ard.sendDigital(pumpPin02, ARD_HIGH);
 }
 
 void ofApp::sendDigitalArduinoDeflation(){
-    ard.sendDigital(valvePin[6], ARD_HIGH);
     ard.sendDigital(valvePin[7], ARD_HIGH);
     ard.sendDigital(pumpPin01, ARD_HIGH);
     ard.sendDigital(pumpPin02, ARD_LOW);
 }
 
 void ofApp::sendDigitalArduinoMaintain(){
-    ard.sendDigital(valvePin[6], ARD_LOW);
-    ard.sendDigital(valvePin[7], ARD_LOW);
+    ard.sendDigital(valvePin[7], ARD_HIGH);
     ard.sendDigital(pumpPin01, ARD_LOW);
     ard.sendDigital(pumpPin02, ARD_LOW);
 }
@@ -246,6 +286,8 @@ void ofApp::drawLog(){
     smallFont.drawString("recordAnalog[1] : " + ofToString(recordAnalog[1]) , valueRow[1], valueCol[0]+40);
     smallFont.drawString("recordAnalog[LAST] : " + ofToString(recordAnalog[RECORD_NUM - 1]) , valueRow[1], valueCol[0]+50);
     
+    
+    
 //    smallFont.drawString("bRecord: " + ofToString(bRecord) , valueRow[1], valueCol[0] + 120);
 //    smallFont.drawString("bPlay: " + ofToString(bPlay) , valueRow[1], valueCol[0] + 140);
 //    smallFont.drawString("bDeform: " + ofToString(bDeform) , valueRow[1], valueCol[0] + 160);
@@ -258,6 +300,7 @@ void ofApp::drawLog(){
     smallFont.drawString("--------- INPUT", valueRow[0], valueCol[1] + 100);
     ofSetColor(255, 0, 0);
     smallFont.drawString("--------- OUTPUT", valueRow[0], valueCol[1] + 120);
+    font.drawString("delta : " + ofToString(testDelta), valueRow[0], valueCol[1] +140);
     
     //    std::cout << "current[" << count << "]: " << recordAnalog[count] << endl;
     //    std::cout << "recordAnalog[" << count-1 << "]: " << recordAnalog[count-1] << endl;
@@ -361,7 +404,7 @@ void ofApp::setupArduino(const int & version) {
     ard.sendAnalogPinReporting(1, ARD_ANALOG); //A1
     
     ard.sendAnalogPinReporting(elastPin01, ARD_ANALOG); //A4
-    //ard.sendAnalogPinReporting(elastPin02, ARD_ANALOG); //A5
+    ard.sendAnalogPinReporting(elastPin02, ARD_ANALOG); //A5
     
     ard.sendDigitalPinMode(valvePin[0], ARD_OUTPUT); //D2
     ard.sendDigitalPinMode(valvePin[1], ARD_OUTPUT); //D3
@@ -419,7 +462,7 @@ void ofApp::setupHistoryPlot(){
     
     plot2 = new ofxHistoryPlot(&currentFrameRate, "hogehogehoge", ofGetWidth(), false);
     plot2->setBackgroundColor(ofColor(0,0,0,0));
-    plot2->setColor( ofColor(255,0,0) );
+    plot2->setColor( ofColor(0,255,0) );
     plot2->setRange(-100, 100);//definable range of plot
     plot2->setRespectBorders(false);
     plot2->setLineWidth(1);
