@@ -24,15 +24,16 @@ public:
 
     //Input
     int rawInputValue = 0;
-    int rawOutputValue = 0;
-    int mapInputValue = 0;
+    int rawInputValue_02 = 0;
+    //int mapInputValue = 0;
     int filterInputValue[2] = {0};
-    int filterOutputValue[2] = {0};
+    int filterInputValue_02[2] = {0};
     float a = 0.9;
     
     //output
     bool bDeform = false;
     int delta = 0;
+    int testDelta = 0;
     int absDelta = 0;
     int oldDelta = 0;
     int _deltaDelta = 0;
@@ -57,11 +58,12 @@ public:
     static const int MIDDLE_VALUE = 500;
     int currentVolume[ANALOG_NUM] = {0};
     int propotionVolume[ANALOG_NUM] = {0};
+    int propotionVolume_02[ANALOG_NUM] = {0};
     int minValue[ANALOG_NUM] = {MIDDLE_VALUE};
     int maxValue[ANALOG_NUM] = {MIDDLE_VALUE};
     int manipulateInput, manipulateOutput;
     
-    static const int DEFORM_RESOLUSION = 60;
+    static const int DEFORM_RESOLUSION = 100;
     
     //ofxgui
     ofxPanel gui;
@@ -99,7 +101,7 @@ public:
     
     //record
     static const int FRAMERATE_NUM = 30; //1sec
-    static const int RECORD_NUM = FRAMERATE_NUM * 10; //nSec
+    static const int RECORD_NUM = FRAMERATE_NUM * 5; //nSec
     int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
     int loopCount = 0;
@@ -117,6 +119,8 @@ public:
     ofFile feedbackFile;
     bool bRecordWrite = false;
     bool bPlatWrite = false;
+    
+    ofImage screen;
     
 private:
     ofArduino ard; //arduino
