@@ -21,20 +21,46 @@ public:
     void windowResized(int w, int h);
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
-
-    //Input
-    int rawInputValue = 0;
-    int rawInputValue_02 = 0;
-    //int mapInputValue = 0;
-    int filterInputValue[2] = {0};
-    int filterInputValue_02[2] = {0};
-    float a = 0.9;
+    
+    //input
+    static const int ANALOG_NUM = 3;
+    int analogNumStart = 0;
+    
+    int analogPinNum[ANALOG_NUM] = {0};
+    
+    int outputGPIO = ANALOG_NUM * 2;
+    //valve 14~19
+    int valveNumStart = 14;
+    int supplyValve[ANALOG_NUM] = {0};
+    int vacuumValve[ANALOG_NUM] = {0};
+    
+    //pump 3,5,6,9,10,11
+    int pumpNumStart = 14;
+    int supplyPump[ANALOG_NUM] = {3, 6, 10};
+    int vacuumPump[ANALOG_NUM] = {5, 9, 11};
+    
+    static const int DEFORM_RESOLUSION = 100;
+    static const int FRAMERATE_NUM = 20; //1sec
+    static const int RECORD_NUM = FRAMERATE_NUM * 10; //nSec
+    
+    static const int MIDDLE_VALUE = 600;
+    int THRESHOLD_VALUE = 100;
+    int minValue[ANALOG_NUM] = {MIDDLE_VALUE};
+    int maxValue[ANALOG_NUM] = {MIDDLE_VALUE};
+    int manipulateInput, manipulateOutput;
+    
+//------------------------------------------
+    
+private:
+    void record();
+    void checkWrite();
+    void play();
+    void useImportData();
+    void captureScreen();
     
     //output
     bool bDeform = false;
-    int delta = 0;
-    int testDelta = 0;
-    int absDelta = 0;
+    int forClosedLoopDelta[ANALOG_NUM] = {0};
     int oldDelta = 0;
     int _deltaDelta = 0;
     bool bPolarity = false;
@@ -48,84 +74,33 @@ public:
     int checkDelta(int x, int y);
     int absoluteDelta(int x);
     int deltaDelta(int x, int y);
-    void sendDigitalArduinoDeflation();
-    void sendDigitalArduinoInflation();
-    void sendDigitalArduinoMaintain();
-    void manipulateElastOn();
-    void manipulateElastOff();
     
-    static const int ANALOG_NUM = 2;
-    static const int MIDDLE_VALUE = 500;
-    int currentVolume[ANALOG_NUM] = {0};
-    int propotionVolume[ANALOG_NUM] = {0};
-    int propotionVolume_02[ANALOG_NUM] = {0};
-    int minValue[ANALOG_NUM] = {MIDDLE_VALUE};
-    int maxValue[ANALOG_NUM] = {MIDDLE_VALUE};
-    int manipulateInput, manipulateOutput;
+    void sendDigitalArduinoSupply(int number);
+    void sendDigitalArduinoVacuum(int number);
+    void sendDigitalArduinoClose(int number);
+    void sendDigitalArduinoExhaust(int number);
     
-    static const int DEFORM_RESOLUSION = 100;
+    void checkDigital(int number);
+    void clearDigital();
+    void checkPWM(int number, int PWM);
     
-    //ofxgui
-    ofxPanel gui;
-    ofxFloatSlider operateMinValueA0;
-    ofxFloatSlider operateMaxValueA0;
-    ofxFloatSlider operateMinValueA1;
-    ofxFloatSlider operateMaxValueA1;
-    
-    //plot
-    ofxHistoryPlot * plot;
-    ofxHistoryPlot * plot2;
-    ofxHistoryPlot * plot3;
-    void setupHistoryPlot();
-    float currentFrameRate;
-    bool bDrawPlot = false;
-
-    //graphic
-    float width = ofGetWidth()/2;
-    float height = ofGetHeight()/2;
-    ofTrueTypeFont      font;
-    ofTrueTypeFont      smallFont;
-    float valueRow[3] = {20, 20 + width * 2/3, width * 4/3 - 50};
-    float valueCol[3] = {30, 60 * 2 + 30, 60 * 3 + 30};
-    void drawLog();
-    
-    //test
-    bool pompTest13 = false;
-    bool pompTest12 = false;
-    bool valveTest3 = false;
-    bool valveTest4 = false;
-    bool valveTest5 = false;
-    bool valveTest6 = false;
-    void ledTest();
-    bool bLed = false;
-    
-    //record
-    static const int FRAMERATE_NUM = 30; //1sec
-    static const int RECORD_NUM = FRAMERATE_NUM * 5; //nSec
-    int recordAnalog[RECORD_NUM] = {0};
     int count = 0;
-    int loopCount = 0;
     bool bRecord = false;
-    void record();
     void countClear();
     
-    //play
-    int playCount = 0;
     bool bPlay = false;
-    void play();
+    void actuate(int number, int deltaThreshold);
     
+    //
+    void feedforward (int number, int deltaThreshold);
+    int delta[ANALOG_NUM] = {0};
+    int absDelta[ANALOG_NUM] = {0};
+    int pwm = 150;
     
-    ofFile recordFile;
-    ofFile feedbackFile;
-    bool bRecordWrite = false;
-    bool bPlatWrite = false;
+    int playCount = 0;
     
-    ofImage screen;
-    
-private:
     ofArduino ard; //arduino
     bool bSetupArduino;
-    
     void initArduino();
     void setupArduino(const int & version);
     void digitalPinChanged(const int & pinNum);
@@ -135,12 +110,46 @@ private:
     string buttonState;
     string potValue;
     
-    double ceil2(double dIn, int nLen);
+    int filteredValue[ANALOG_NUM][2] = {0};
+    int propVol[ANALOG_NUM] = {0};
+    int recordPropVol[ANALOG_NUM][RECORD_NUM] = {0};
     
-    int ledPin = 2;
-    int pumpPin01 = 10;
-    int pumpPin02 = 11;
-    int elastPin01 = 4;
-    int elastPin02 = 5;
-    int valvePin[8] = {2,3,4,5,6,7,8,9};
+    void adjustAnalog(int pin, int order);
+    void updateVal(int order);
+    
+    double ceil2(double dIn, int nLen);
+    float a = 0.9;
+    
+    bool bRelay = false;
+    
+    //graphics
+    float width = ofGetWidth()/2;
+    float height = ofGetHeight()/2;
+    ofTrueTypeFont      font;
+    ofTrueTypeFont      smallFont;
+    float valueRow[3] = {20, width * 2 - 200, width * 2 - 350};
+    float valueCol[3] = {250, 400, 550};
+    void drawLog();
+    void drawLogContents(int number);
+    void drawArrayData(int number);
+ 
+    ofFile recordFile;
+    ofFile feedbackFile;
+    bool bRecordWrite = false;
+    bool bPlatWrite = false;
+    
+    ofImage screen;
+    
+    //ofxgui
+    ofxPanel gui;
+    ofxFloatSlider operateMax[ANALOG_NUM];
+    ofxFloatSlider operateMin[ANALOG_NUM];
+    
+    //plot
+    ofxHistoryPlot * plot[ANALOG_NUM];
+    ofxHistoryPlot * recordPlot[ANALOG_NUM];
+    void setupHistoryPlot(int number);
+
+    float currentFrameRate;
+    bool bDrawPlot = false;
 };
