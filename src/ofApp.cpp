@@ -24,7 +24,7 @@ void ofApp::setup(){
     for (int i = valveNumStart; i < outputGPIO + valveNumStart; i++) {
         ard.sendDigital(i, ARD_LOW);
     }
-
+    
     ard.sendPwm(3, 0);
     ard.sendPwm(5, 0);
     ard.sendPwm(6, 0);
@@ -50,12 +50,13 @@ void ofApp::update(){
     record();
     play();
     
+    //----for feedbackloop------
     for (int i = 0; i < ANALOG_NUM; i++) {
         forClosedLoopDelta[i] = propVol[i] - recordPropVol[i][count];
     }
+    //--------------------------
     
-    //std::cout << forClosedLoopDelta[0] << endl;
-    std::cout << recordPropVol[0][100] << endl;
+    std::cout << recordPropVol[0][99] << endl;
     
     count++;
 }
@@ -64,7 +65,12 @@ void ofApp::draw(){
     gui.draw();
     drawLog();
     
-    //recordPlot
+    //plot
+    for (int i = 0; i < ANALOG_NUM; i++) {
+        plot[i]->draw(0, 150 * (i+1) + 100, ofGetWidth(), 150);
+        updateVal(i);
+    }
+    
     if (bDrawPlot == true) {
         if (playCount >= RECORD_NUM) {
             bDrawPlot = false;
@@ -75,11 +81,6 @@ void ofApp::draw(){
         }
     }
     
-    //plot
-    for (int i = 0; i < ANALOG_NUM; i++) {
-        plot[i]->draw(0, 150 * (i+1) + 100, ofGetWidth(), 150);
-        updateVal(i);
-    }
 }
 
 //------------------------------------------------------------
@@ -142,79 +143,43 @@ void ofApp::record(){
 }
 
 void ofApp::play(){
-    //command "r"
+    //command 'r'
     if (bPlay == true) {
-        if (playCount == RECORD_NUM) {//over
+        if (playCount == RECORD_NUM) {
             bPlay = false;
             countClear();
             for (int i = 0; i < ANALOG_NUM; i++) {
                 sendDigitalArduinoExhaust(i);
             }
         } else {
-//            for (int i = 0; i < ANALOG_NUM; i++) {
-//               actuate(i, 3);
-//            }
-            //actuate(0,3);
-            
-            //---------feedforward------
-//            delta[0] = checkDelta(recordPropVol[0][count], recordPropVol[0][count-1]);
-//            absDelta[0] = absoluteDelta(delta[0]);
-//            feedforward(0, 3);
-            
             for (int i = 0; i < ANALOG_NUM; i++) {
-                delta[i] = checkDelta(recordPropVol[i][count], recordPropVol[i][count-1]);
-                absDelta[i] = absoluteDelta(delta[i]);
-                feedforward(i, 3);
+                //activeFeedforward(i);
             }
-            //--------------------------
         }
         playCount++;
     }
 }
 
-
-void ofApp::actuate(int number, int _deltaThreshold){
-    
-    std::cout << bPlay << endl;
-    startTime = ofGetElapsedTimeMillis();
-    
-    if (forClosedLoopDelta[number] == 0) { //close
-        sendDigitalArduinoClose(number);
-        
-    } else if (forClosedLoopDelta[number] < _deltaThreshold) { //supply
-        //startTime = ofGetElapsedTimeMillis();
-        sendDigitalArduinoSupply(number);
-//        bDeform = true;
-//        while(bDeform) {
-//            sendDigitalArduinoSupply(number);
-//            stopActuate();
-//        }
-    } else if (forClosedLoopDelta[number] > _deltaThreshold) { //vacuum
-        //startTime = ofGetElapsedTimeMillis();
-        sendDigitalArduinoVacuum(number);
-//        bDeform = true;
-//        while(bDeform) {
-//            sendDigitalArduinoVacuum(number);
-//            stopActuate();
-//        }
-    }
+void ofApp::activeFeedforward(int number) {
+    delta[number] = checkDelta(recordPropVol[number][count], recordPropVol[number][count-1]);
+    absDelta[number] = absoluteDelta(delta[number]);
+    feedforward(number, 3);
 }
 
 void ofApp::feedforward(int number, int deltaThreshold){
+    
     //変化量があるかどうか
     if(absDelta[number] >= 1) {
         bDeform = true;
-        //startTime = ofGetElapsedTimeMillis();
+        bActive[number] = true;
     } else {
         bDeform = false;
+        bActive[number] = false;
     }
     
     //正負の判定
-    if (delta[number] > 0) {
-        bPolarity = true;//増加
-    } else if (delta[number] < 0){
-        bPolarity = false;//減少
-    }
+    if (delta[number] > 0) { bPolarity = true;}
+    else if (delta[number] < 0){ bPolarity = false; }
     
     if (bDeform == true) {
         if (bPolarity == true) {
@@ -226,6 +191,21 @@ void ofApp::feedforward(int number, int deltaThreshold){
         sendDigitalArduinoClose(number);
     }
 }
+
+void ofApp::actuate(int number, int _deltaThreshold){
+    
+    std::cout << bPlay << endl;
+    startTime = ofGetElapsedTimeMillis();
+    
+    if (forClosedLoopDelta[number] == 0) { //close
+        sendDigitalArduinoClose(number);
+    } else if (forClosedLoopDelta[number] < _deltaThreshold) { //supply
+        sendDigitalArduinoSupply(number);
+    } else if (forClosedLoopDelta[number] > _deltaThreshold) { //vacuum
+        sendDigitalArduinoVacuum(number);
+    }
+}
+
 
 void ofApp::stopActuate(){
     if(ofGetElapsedTimeMillis() - startTime < 10) {
@@ -294,8 +274,13 @@ void ofApp::drawLog(){
         }
     }
     
-    smallFont.drawString("millis: " + ofToString(milliSeconds), valueRow[1], 50);
-    smallFont.drawString("startTime: " + ofToString(startTime), valueRow[1], 70);
+//    smallFont.drawString("millis: " + ofToString(milliSeconds), valueRow[1], 50);
+//    smallFont.drawString("startTime: " + ofToString(startTime), valueRow[1], 70);
+    smallFont.drawString("pwm: " + ofToString(pwm), valueRow[1], 50);
+    //smallFont.drawString("framerate: " + ofToString(FRAMERATE_NUM), valueRow[1], 70);
+    smallFont.drawString("Unit:1 " + ofToString(bActive[0]), valueRow[1], 90);
+    smallFont.drawString("Unit:2 " + ofToString(bActive[1]), valueRow[1], 110);
+    smallFont.drawString("Unit:3 " + ofToString(bActive[2]), valueRow[1], 130);
     
     ofSetColor(255);
     for (int i = 0; i < ANALOG_NUM; i++) {
@@ -319,7 +304,7 @@ void ofApp::drawLogContents(int _number){
 void ofApp::drawArrayData(int _number) {
     smallFont.drawString("memory[0] :  " + ofToString(recordPropVol[_number][0]), valueRow[1], valueCol[_number] + 30);
     smallFont.drawString("memory[20] :  " + ofToString(recordPropVol[_number][20]), valueRow[1], valueCol[_number] + 50);
-    smallFont.drawString("memory[100] :  " + ofToString(recordPropVol[_number][100]), valueRow[1], valueCol[_number] + 70);
+    smallFont.drawString("memory[100] :  " + ofToString(recordPropVol[_number][99]), valueRow[1], valueCol[_number] + 70);
 }
 
 void ofApp::keyPressed(int key){
@@ -433,9 +418,9 @@ void ofApp::setupArduino(const int & version) {
     }
     
     //3,5,6,9,10,11 for the pump
-//    for (int i = pumpNumStart; i < pumpNumStart + outputGPIO; i++) {
-//        ard.sendDigitalPinMode(i, ARD_OUTPUT);
-//    }
+    //    for (int i = pumpNumStart; i < pumpNumStart + outputGPIO; i++) {
+    //        ard.sendDigitalPinMode(i, ARD_OUTPUT);
+    //    }
     ard.sendDigitalPinMode(3, ARD_PWM);
     ard.sendDigitalPinMode(5, ARD_PWM);
     ard.sendDigitalPinMode(6, ARD_PWM);

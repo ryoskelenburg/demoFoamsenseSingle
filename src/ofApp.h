@@ -29,6 +29,7 @@ public:
     int analogPinNum[ANALOG_NUM] = {0};
     
     int outputGPIO = ANALOG_NUM * 2;
+    
     //valve 14~19
     int valveNumStart = 14;
     int supplyValve[ANALOG_NUM] = {0};
@@ -48,6 +49,8 @@ public:
     int minValue[ANALOG_NUM] = {MIDDLE_VALUE};
     int maxValue[ANALOG_NUM] = {MIDDLE_VALUE};
     int manipulateInput, manipulateOutput;
+    
+    int pwm = 150;
     
 //------------------------------------------
     
@@ -91,11 +94,11 @@ private:
     bool bPlay = false;
     void actuate(int number, int deltaThreshold);
     
-    //
+    //------feedforward---
     void feedforward (int number, int deltaThreshold);
+    void activeFeedforward(int number);
     int delta[ANALOG_NUM] = {0};
     int absDelta[ANALOG_NUM] = {0};
-    int pwm = 150;
     
     int playCount = 0;
     
@@ -132,11 +135,14 @@ private:
     void drawLog();
     void drawLogContents(int number);
     void drawArrayData(int number);
- 
+    
     ofFile recordFile;
     ofFile feedbackFile;
     bool bRecordWrite = false;
     bool bPlatWrite = false;
+
+    //------feedback-------
+    
     
     ofImage screen;
     
@@ -152,4 +158,6 @@ private:
 
     float currentFrameRate;
     bool bDrawPlot = false;
+    
+    bool bActive[3] = {false};
 };
