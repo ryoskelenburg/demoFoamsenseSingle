@@ -22,14 +22,16 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     
-    //input
+    /*-----input-----*/
     static const int ANALOG_NUM = 3;
-    int analogNumStart = 0;
-    
-    int analogPinNum[ANALOG_NUM] = {0};
-    
+    static const int UNIT_NUM = 2;
+    static const int TOTAL_ANALOG_NUM = ANALOG_NUM * UNIT_NUM;
+
+    int analogPinNum[TOTAL_ANALOG_NUM] = {0};
     int outputGPIO = ANALOG_NUM * 2;
+    int analogNumStart[UNIT_NUM] = {0,3};
     
+    /*-----output-----*/
     //valve 14~19
     int valveNumStart = 14;
     int supplyValve[ANALOG_NUM] = {0};
@@ -40,42 +42,49 @@ public:
     int supplyPump[ANALOG_NUM] = {3, 6, 10};
     int vacuumPump[ANALOG_NUM] = {5, 9, 11};
     
+    int pwm = 150;
+    
+    /*-----setup-----*/
     static const int DEFORM_RESOLUSION = 100;
     static const int FRAMERATE_NUM = 20; //1sec
     static const int RECORD_NUM = FRAMERATE_NUM * 10; //nSec
     
     static const int MIDDLE_VALUE = 600;
     int THRESHOLD_VALUE = 100;
-    int minValue[ANALOG_NUM] = {MIDDLE_VALUE};
-    int maxValue[ANALOG_NUM] = {MIDDLE_VALUE};
+    int minValue[TOTAL_ANALOG_NUM] = {MIDDLE_VALUE};
+    int maxValue[TOTAL_ANALOG_NUM] = {MIDDLE_VALUE};
     int manipulateInput, manipulateOutput;
     
-    int pwm = 150;
-    
-//------------------------------------------
+/*-----------------------------------------------------------------*/
     
 private:
-    void record();
+    void workRecord();
+    void workPlay();
+    void workRealtime();
+    
+    void ffJudge(int number);
+    void ffOutput (int number, int input);
+    
+    bool bRecord = false;
+    bool bPlay = false;
+    bool bReal = false;
+    
     void checkWrite();
-    void play();
     void useImportData();
     void captureScreen();
     
     //output
-    bool bDeform = false;
+    bool bDeform[TOTAL_ANALOG_NUM] = {false};
+    bool bPolarity[TOTAL_ANALOG_NUM] = {false};
     int forClosedLoopDelta[ANALOG_NUM] = {0};
     int oldDelta = 0;
-    int _deltaDelta = 0;
-    bool bPolarity = false;
     float startTime = 0;
     float milliSeconds = 0;
     
     void actuate();
-    void stopActuate();
+    void stopActuate(int number);
     void coolDown();
     void checktime();
-    int checkDelta(int x, int y);
-    int absoluteDelta(int x);
     int deltaDelta(int x, int y);
     
     void sendDigitalArduinoSupply(int number);
@@ -88,17 +97,13 @@ private:
     void checkPWM(int number, int PWM);
     
     int count = 0;
-    bool bRecord = false;
     void countClear();
-    
-    bool bPlay = false;
     void actuate(int number, int deltaThreshold);
     
     //------feedforward---
-    void feedforward (int number, int deltaThreshold);
-    void activeFeedforward(int number);
-    int delta[ANALOG_NUM] = {0};
-    int absDelta[ANALOG_NUM] = {0};
+    
+    int delta[TOTAL_ANALOG_NUM] = {0};
+    int absDelta[TOTAL_ANALOG_NUM] = {0};
     
     int playCount = 0;
     
@@ -113,9 +118,9 @@ private:
     string buttonState;
     string potValue;
     
-    int filteredValue[ANALOG_NUM][2] = {0};
-    int propVol[ANALOG_NUM] = {0};
-    int recordPropVol[ANALOG_NUM][RECORD_NUM] = {0};
+    int filteredValue[TOTAL_ANALOG_NUM][2] = {0};
+    int propVol[TOTAL_ANALOG_NUM] = {0};
+    int recordPropVol[TOTAL_ANALOG_NUM][RECORD_NUM] = {0};
     
     void adjustAnalog(int pin, int order);
     void updateVal(int order);
@@ -132,8 +137,12 @@ private:
     ofTrueTypeFont      smallFont;
     float valueRow[3] = {20, width * 2 - 200, width * 2 - 350};
     float valueCol[3] = {250, 400, 550};
+    
+    float contentWidth = 200;
+    float row[2][3] = {{20, 20 + contentWidth, 20 + contentWidth * 2}, {width, width + contentWidth, width + contentWidth * 2}};
+    int column = 700;
     void drawLog();
-    void drawLogContents(int number);
+    void drawLogContents(int number, int row, int order);
     void drawArrayData(int number);
     
     ofFile recordFile;
@@ -148,12 +157,12 @@ private:
     
     //ofxgui
     ofxPanel gui;
-    ofxFloatSlider operateMax[ANALOG_NUM];
-    ofxFloatSlider operateMin[ANALOG_NUM];
+    ofxFloatSlider operateMax[TOTAL_ANALOG_NUM];
+    ofxFloatSlider operateMin[TOTAL_ANALOG_NUM];
     
     //plot
-    ofxHistoryPlot * plot[ANALOG_NUM];
-    ofxHistoryPlot * recordPlot[ANALOG_NUM];
+    ofxHistoryPlot * plot[TOTAL_ANALOG_NUM];
+    ofxHistoryPlot * recordPlot[TOTAL_ANALOG_NUM];
     void setupHistoryPlot(int number);
 
     float currentFrameRate;

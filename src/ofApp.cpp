@@ -3,17 +3,17 @@ void ofApp::setup(){
     ofBackground(20, 20, 20);
     ofSetVerticalSync(true);
     ofSetFrameRate(FRAMERATE_NUM);
-    font.load("font/franklinGothic.otf", 16);
+    font.load("font/franklinGothic.otf", 10);
     smallFont.load("font/franklinGothic.otf", 10);
     initArduino();
     gui.setup();
     
+    /*-----------input init-------*/
+    //1
     for (int i = 0; i< ANALOG_NUM; i++){
         analogPinNum[i] = {i}; //A0~2
-        supplyValve[i] = {2 * (i+7)}; //14,16,18
-        vacuumValve[i] = {2 * (i+7) + 1}; //15,17,19
-        //supplyPump[i] = {2 * (i+1)}; //14,16,18
-        //vacuumPump[i] = {2 * (i+1) + 1}; //15,17,19
+        supplyValve[i] = {2 * (i+7) + 1}; //15,17,19
+        vacuumValve[i] = {2 * (i+7)}; //14,16,18
         
         gui.add(operateMax[i].setup("minValue: A" + ofToString(analogPinNum[i]),MIDDLE_VALUE - THRESHOLD_VALUE, 0, 1023));
         gui.add(operateMin[i].setup("MaxValue: A" +   ofToString(analogPinNum[i]),MIDDLE_VALUE + THRESHOLD_VALUE, 0, 1023));
@@ -21,6 +21,17 @@ void ofApp::setup(){
         setupHistoryPlot(i);
     }
     
+    //2~
+    for (int i = analogNumStart[1]; i < TOTAL_ANALOG_NUM; i++) {
+        analogPinNum[i] = {i};
+        gui.add(operateMax[i].setup("minValue: A" + ofToString(analogPinNum[i]),MIDDLE_VALUE - THRESHOLD_VALUE, 0, 1023));
+        gui.add(operateMin[i].setup("MaxValue: A" +   ofToString(analogPinNum[i]),MIDDLE_VALUE + THRESHOLD_VALUE, 0, 1023));
+        
+        setupHistoryPlot(i);
+    }
+    
+    
+    /*---------output init----*/
     for (int i = valveNumStart; i < outputGPIO + valveNumStart; i++) {
         ard.sendDigital(i, ARD_LOW);
     }
@@ -37,7 +48,7 @@ void ofApp::update(){
     currentFrameRate = ofGetFrameRate();
     updateArduino();
     
-    for (int i = 0; i < ANALOG_NUM; i++) {
+    for (int i = 0; i < TOTAL_ANALOG_NUM; i++) {
         adjustAnalog(analogPinNum[i], i);
         
         plot[i]->update(propVol[i]);
@@ -46,9 +57,14 @@ void ofApp::update(){
     
     milliSeconds = ofGetElapsedTimeMillis();
     
-    //activate
-    record();
-    play();
+    //*-select playback or sync-*//
+    /*---playback---*/
+    //workRecord();
+    //workPlay();
+    
+    /*---sync---*/
+    workRealtime();
+    
     
     //----for feedbackloop------
     for (int i = 0; i < ANALOG_NUM; i++) {
@@ -56,36 +72,13 @@ void ofApp::update(){
     }
     //--------------------------
     
-    std::cout << recordPropVol[0][99] << endl;
+//    std::cout << recordPropVol[0][99] << endl;
+    //std::cout <<  row[1][1] << endl;
     
     count++;
 }
 
-void ofApp::draw(){
-    gui.draw();
-    drawLog();
-    
-    //plot
-    for (int i = 0; i < ANALOG_NUM; i++) {
-        plot[i]->draw(0, 150 * (i+1) + 100, ofGetWidth(), 150);
-        updateVal(i);
-    }
-    
-    if (bDrawPlot == true) {
-        if (playCount >= RECORD_NUM) {
-            bDrawPlot = false;
-        } else {
-            for (int i = 0; i < ANALOG_NUM; i++){
-                recordPlot[i]->draw(0,150 * (i+1) + 100, ofGetWidth(), 150);
-            }
-        }
-    }
-    
-}
-
 //------------------------------------------------------------
-//------------------------------------------------------------
-
 
 void ofApp::adjustAnalog(int _pin, int _order){
     filteredValue[_order][1] = a * filteredValue[_order][0] + (1-a) * ard.getAnalog(_pin);
@@ -111,23 +104,7 @@ void ofApp::countClear(){
     startTime = 0;
 }
 
-//--------feedforward------------
-
-int ofApp::checkDelta(int value, int oldValue){
-    return value - oldValue;
-}
-
-int ofApp::absoluteDelta(int _delta){
-    return abs(_delta);
-}
-
-int ofApp::deltaDelta(int _x, int _y){
-    return abs(_x - _y);
-}
-
-//--------------------------------
-
-void ofApp::record(){
+void ofApp::workRecord(){
     //command "s"
     if (bRecord == true) {
         if(count == RECORD_NUM){
@@ -135,14 +112,14 @@ void ofApp::record(){
             countClear();
         } else {
             //countがリミットにいくまで配列に格納
-            for (int i = 0; i < ANALOG_NUM; i++) {
+            for (int i = 0; i < TOTAL_ANALOG_NUM; i++) {
                 recordPropVol[i][count] = propVol[i];
             }
         }
     }
 }
 
-void ofApp::play(){
+void ofApp::workPlay(){
     //command 'r'
     if (bPlay == true) {
         if (playCount == RECORD_NUM) {
@@ -160,29 +137,47 @@ void ofApp::play(){
     }
 }
 
-void ofApp::activeFeedforward(int number) {
-    delta[number] = checkDelta(recordPropVol[number][count], recordPropVol[number][count-1]);
-    absDelta[number] = absoluteDelta(delta[number]);
-    feedforward(number, 3);
+void ofApp::workRealtime(){
+    //command 'p'
+    if (bReal == true) {
+        //input
+        for (int i = 3; i < TOTAL_ANALOG_NUM; i++) {
+            ffJudge(i);
+        }
+        //output (3-0, 4-1, 5-2)
+        for (int i = 0; i < ANALOG_NUM; i++) {
+            ffOutput(i, i+3);
+        }
+        
+    } else {
+        for (int i = 0; i < ANALOG_NUM; i++) {
+            sendDigitalArduinoExhaust(i);
+        }
+    }
 }
 
-void ofApp::feedforward(int number, int deltaThreshold){
+/*--------feedforward------------*/
+void ofApp::ffJudge(int number){
+    delta[number] = recordPropVol[number][count] - recordPropVol[number][count-1];
+    absDelta[number] = abs(delta[number]);
     
-    //変化量があるかどうか
+    //変化の判定
     if(absDelta[number] >= 1) {
-        bDeform = true;
-        bActive[number] = true;
-    } else {
-        bDeform = false;
-        bActive[number] = false;
-    }
+        bDeform[number] = true;
+        bActive[number] = true;}
+    else {
+        bDeform[number] = false;
+        bActive[number] = false;}
     
     //正負の判定
-    if (delta[number] > 0) { bPolarity = true;}
-    else if (delta[number] < 0){ bPolarity = false; }
-    
-    if (bDeform == true) {
-        if (bPolarity == true) {
+    if (delta[number] > 0) { bPolarity[number] = true;}
+    else if (delta[number] < 0){ bPolarity[number] = false;}
+}
+
+void ofApp::ffOutput(int number, int input){
+    //出力
+    if (bDeform[input] == true) {
+        if (bPolarity[input] == true) {
             sendDigitalArduinoSupply(number);
         } else {
             sendDigitalArduinoVacuum(number);
@@ -191,6 +186,8 @@ void ofApp::feedforward(int number, int deltaThreshold){
         sendDigitalArduinoClose(number);
     }
 }
+
+/*--------feedback------------*/
 
 void ofApp::actuate(int number, int _deltaThreshold){
     
@@ -206,14 +203,15 @@ void ofApp::actuate(int number, int _deltaThreshold){
     }
 }
 
-
-void ofApp::stopActuate(){
+void ofApp::stopActuate(int number){
     if(ofGetElapsedTimeMillis() - startTime < 10) {
-        bDeform = true;
+        bDeform[number] = true;
     } else {
-        bDeform = false;
+        bDeform[number] = false;
     }
 }
+
+/*----------------arduino control------------*/
 
 void ofApp::sendDigitalArduinoSupply(int number){
     ard.sendDigital(supplyValve[number], ARD_HIGH);
@@ -243,7 +241,6 @@ void ofApp::sendDigitalArduinoExhaust(int number){
     ard.sendPwm(vacuumPump[number], 0);
 }
 
-//-------------------------------------------
 void ofApp::checkDigital(int number){
     ard.sendDigital(number, ARD_HIGH);
 }
@@ -257,7 +254,34 @@ void ofApp::clearDigital(){
         ard.sendDigital(i, ARD_LOW);
     }
 }
-//-------------------------------------------
+//*****--------Draw--------------------****//
+
+void ofApp::draw(){
+    gui.draw();
+    drawLog();
+    
+    /*------------plot-----------*/
+    //draw
+    for (int i = 0; i < ANALOG_NUM; i++) {
+        plot[i]->draw(0, 100 * (i+1) + 150, ofGetWidth()/2, 100);
+        updateVal(i);
+    }
+    for (int i = 3; i < TOTAL_ANALOG_NUM; i++) {
+        plot[i]->draw(ofGetWidth()/2, 100 * (i-2) + 150, ofGetWidth()/2, 100);
+        updateVal(i);
+    }
+    
+    //    recordMode
+    if (bDrawPlot == true) {
+        if (playCount >= RECORD_NUM) {
+            bDrawPlot = false;
+        } else {
+            for (int i = 0; i < TOTAL_ANALOG_NUM; i++){
+                recordPlot[i]->draw(0,150 * (i+1) + 100, ofGetWidth(), 150);
+            }
+        }
+    }
+}
 
 void ofApp::drawLog(){
     ofSetColor(255);
@@ -284,21 +308,24 @@ void ofApp::drawLog(){
     
     ofSetColor(255);
     for (int i = 0; i < ANALOG_NUM; i++) {
-        drawLogContents(i);
-        drawArrayData(i);
+        drawLogContents(i, 0, i);
+        //drawArrayData(i);
+    }
+    
+    for (int i = 3; i < TOTAL_ANALOG_NUM; i++) {
+        drawLogContents(i, 1, i-3);
     }
 }
 
-void ofApp::drawLogContents(int _number){
-    //0~100
-    font.drawString("Propotion : " + ofToString(propVol[_number]), valueRow[2], valueCol[_number]);
-    //value
-    smallFont.drawString("value  :  " + ofToString(filteredValue[_number][1]), valueRow[2], valueCol[_number] + 30);
-    //min + max
-    smallFont.drawString("minValue  :  " + ofToString(minValue[_number]), valueRow[2], valueCol[_number] + 50);
-    smallFont.drawString("maxValue     :  " + ofToString(maxValue[_number]), valueRow[2], valueCol[_number] + 70);
-    //delta
-    smallFont.drawString("delta : " + ofToString(forClosedLoopDelta[_number]), valueRow[2], valueCol[_number] +90);
+void ofApp::drawLogContents(int _number, int _row, int _order){
+    
+    font.drawString("Propotion : " + ofToString(propVol[_number]), row[_row][_order], 700);
+    
+    smallFont.drawString("value  :  " + ofToString(filteredValue[_number][1]), row[_row][_order], 715);
+
+    smallFont.drawString("minValue  :  " + ofToString(minValue[_number]), row[_row][_order], 730);
+    smallFont.drawString("maxValue     :  " + ofToString(maxValue[_number]), row[_row][_order], 745);
+    smallFont.drawString("delta : " + ofToString(forClosedLoopDelta[_number]), row[_row][_order], 760);
 }
 
 void ofApp::drawArrayData(int _number) {
@@ -307,13 +334,15 @@ void ofApp::drawArrayData(int _number) {
     smallFont.drawString("memory[100] :  " + ofToString(recordPropVol[_number][99]), valueRow[1], valueCol[_number] + 70);
 }
 
+/*-----Default oF------*/
+
 void ofApp::keyPressed(int key){
     switch (key) {
         case 'f':
             ofToggleFullscreen();
             break;
         case 'c':
-            for (int i = 0; i < ANALOG_NUM; i++) {
+            for (int i = 0; i < TOTAL_ANALOG_NUM; i++) {
                 minValue[i] = operateMin[i];
                 maxValue[i] = operateMax[i];
             }
@@ -328,14 +357,17 @@ void ofApp::keyPressed(int key){
         case 'r':
             bPlay = true;
             countClear();
-            for (int i = 0; i < ANALOG_NUM; i++) {
+            for (int i = 0; i < TOTAL_ANALOG_NUM; i++) {
                 plot[i]->reset();
                 recordPlot[i]->reset();
             }
             bDrawPlot = true;
             break;
-        case 'm':
-            bDeform = true;
+        case 'p':
+            bReal = true;
+            break;
+        case 'o':
+            bReal = false;
             break;
         case 'w':
             //bRecordWrite = true;
@@ -368,9 +400,6 @@ void ofApp::keyPressed(int key){
 
 void ofApp::keyReleased(int key){
     switch (key) {
-        case 'm':
-            bDeform = false;
-            break;
         default:
             break;
     }
@@ -395,7 +424,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 }
 
 void ofApp::initArduino(){
-    ard.connect("/dev/cu.usbmodem1421", 57600);
+    ard.connect("/dev/cu.usbmodem1411", 57600);
     
     ofAddListener(ard.EInitialized, this, &ofApp::setupArduino);
     bSetupArduino    = false;
@@ -408,7 +437,7 @@ void ofApp::setupArduino(const int & version) {
     ofLogNotice() << "firmata v" << ard.getMajorFirmwareVersion() << "." << ard.getMinorFirmwareVersion();
     
     //A0~2
-    for (int i = analogNumStart; i < ANALOG_NUM; i++) {
+    for (int i = analogNumStart[0]; i < TOTAL_ANALOG_NUM; i++) {
         ard.sendAnalogPinReporting(i, ARD_ANALOG);
     }
     
@@ -452,7 +481,7 @@ void ofApp::analogPinChanged(const int & pinNum) {
 }
 
 void ofApp::setupHistoryPlot(int number){
-    plot[number] = new ofxHistoryPlot(&currentFrameRate, "number:00" + ofToString(number), ofGetWidth(), false);
+    plot[number] = new ofxHistoryPlot(&currentFrameRate, "number:00" + ofToString(number), ofGetWidth()/2, false);
     plot[number]->setBackgroundColor(ofColor(0,0,0,0));
     plot[number]->setColor(ofColor(ofRandom( 100, 255 ),ofRandom( 100, 255 ),ofRandom( 100, 255 )));
     plot[number]->setRange(-DEFORM_RESOLUSION/ 2 +10, DEFORM_RESOLUSION/2 + 10);
@@ -462,7 +491,7 @@ void ofApp::setupHistoryPlot(int number){
     plot[number]->setShowSmoothedCurve(false);
     plot[number]->setSmoothFilter(0.1);
     
-    recordPlot[number] = new ofxHistoryPlot(&currentFrameRate, "number:00" + ofToString(number), ofGetWidth(), false);
+    recordPlot[number] = new ofxHistoryPlot(&currentFrameRate, "number:00" + ofToString(number), ofGetWidth()/2, false);
     recordPlot[number]->setBackgroundColor(ofColor(0,0,0,0));
     recordPlot[number]->setColor(ofColor(ofRandom( 100, 255 ),ofRandom( 100, 255 ),ofRandom( 100, 255 )));
     recordPlot[number]->setRange(-DEFORM_RESOLUSION - 10, DEFORM_RESOLUSION + 10);
